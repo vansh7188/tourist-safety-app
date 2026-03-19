@@ -152,28 +152,6 @@ sih_safety_web/
 - `POST /login` - Login user
 - `POST /profile` - Create/update user profile (Protected)
 
-### **AI Chatbot**
-- `POST /api/chat` - Send message to AI safety chatbot
-
-### **Digital ID**
-- `GET/POST /api/digitalid` - Manage digital ID (Protected)
-
-## 🔒 Environment Variables
-
-```env
-# Server
-PORT=5000
-
-# Database
-MONGO_URI2=mongodb+srv://username:password@cluster.mongodb.net/dbname
-
-# Authentication
-JWT_SECRET=your_super_secret_key
-
-# AI
-GEMINI_API_KEY=your_google_gemini_api_key
-```
-
 ## 🧪 Testing
 
 To test the chatbot:
@@ -182,8 +160,11 @@ To test the chatbot:
 3. Open the chatbot component
 4. Ask safety-related questions
 
-## 📝 Usage Examples
+## Environment Variables
 
+PORT=5000
+MONGO_URI=<your_mongodb_uri>
+JWT_SECRET=<your_secret>
 ### Sign Up
 ```bash
 POST /signup
