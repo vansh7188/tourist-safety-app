@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 function DigitalId() {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const [digitalId, setDigitalId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -19,7 +20,7 @@ function DigitalId() {
         }
         const token = localStorage.getItem("token");
         const res = await fetch(
-          `http://localhost:5000/api/digitalid/digital-id?email=${encodeURIComponent(email)}`,
+          `${API_BASE_URL}/api/digitalid/digital-id?email=${encodeURIComponent(email)}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -49,7 +50,7 @@ function DigitalId() {
   try {
     const token = localStorage.getItem("token");
     const email = localStorage.getItem("email"); 
-    const res = await fetch(`http://localhost:5000/api/digitalid/digital-id`, {
+    const res = await fetch(`${API_BASE_URL}/api/digitalid/digital-id`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

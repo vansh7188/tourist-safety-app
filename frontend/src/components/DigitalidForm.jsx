@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 function DigitalidForm() {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const navigateto = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
@@ -121,7 +122,7 @@ function DigitalidForm() {
   setSuccess("");
   try {
     const token = localStorage.getItem("token"); // Get token from localStorage
-    const res = await fetch("http://localhost:5000/api/digitalid/digital-id", {
+    const res = await fetch(`${API_BASE_URL}/api/digitalid/digital-id`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

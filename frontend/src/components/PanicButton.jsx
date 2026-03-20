@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 function PanicButton({ currentLocation }) {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const navigate = useNavigate();
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -71,7 +72,7 @@ function PanicButton({ currentLocation }) {
     const token = localStorage.getItem("token");
 
     try {
-        const response = await fetch("http://localhost:5000/api/digitalid/panic", {
+        const response = await fetch(`${API_BASE_URL}/api/digitalid/panic`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
