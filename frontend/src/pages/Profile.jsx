@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import axios from "axios";
 
 function ProfileForm() {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -23,7 +25,7 @@ function ProfileForm() {
   // Send Email OTP
   const sendEmailOTP = async () => {
     try {
-      await axios.post("http://localhost:5000/send-email-otp", { email: form.email });
+      await axios.post(`${API_BASE_URL}/send-email-otp`, { email: form.email });
       alert("OTP sent to email");
     } catch (err) {
       console.log(err);
@@ -33,7 +35,7 @@ function ProfileForm() {
   // Verify Email OTP
   const verifyEmailOTP = async () => {
     try {
-      await axios.post("http://localhost:5000/verify-email-otp", { email: form.email, otp: emailOTP });
+      await axios.post(`${API_BASE_URL}/verify-email-otp`, { email: form.email, otp: emailOTP });
       alert("Email verified!");
       setEmailVerified(true);
     } catch (err) {
@@ -44,7 +46,7 @@ function ProfileForm() {
   // Send Contact OTP
   const sendContactOTP = async () => {
     try {
-      await axios.post("http://localhost:5000/send-contact-otp", { contact: form.contact });
+      await axios.post(`${API_BASE_URL}/send-contact-otp`, { contact: form.contact });
       alert("OTP sent to contact");
     } catch (err) {
       console.log(err);
@@ -54,7 +56,7 @@ function ProfileForm() {
   // Verify Contact OTP
   const verifyContactOTP = async () => {
     try {
-      await axios.post("http://localhost:5000/verify-contact-otp", { contact: form.contact, otp: contactOTP });
+      await axios.post(`${API_BASE_URL}/verify-contact-otp`, { contact: form.contact, otp: contactOTP });
       alert("Contact verified!");
       setContactVerified(true);
     } catch (err) {
@@ -69,7 +71,7 @@ function ProfileForm() {
       return;
     }
     try {
-      await axios.post("http://localhost:5000/profile", form);
+      await axios.post(`${API_BASE_URL}/profile`, form);
       alert("Profile saved successfully");
     } catch (err) {
       console.log(err);

@@ -9,6 +9,7 @@ function Auth() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -18,7 +19,7 @@ function Auth() {
     const endpoint = isSignUp ? "/signup" : "/login";
 
     try {
-      const res = await fetch(`http://localhost:5000${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

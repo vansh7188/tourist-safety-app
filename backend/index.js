@@ -25,12 +25,14 @@ const ai = new GoogleGenAI({
 });
 
 // ----------------- Middleware -----------------
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.FRONTEND_URL || "https://your-frontend-url.vercel.app",
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://your-frontend-url.vercel.app",
-    ],
+    origin: allowedOrigins,
     credentials: true,
   })
 );
