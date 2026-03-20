@@ -25,7 +25,16 @@ const ai = new GoogleGenAI({
 });
 
 // ----------------- Middleware -----------------
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://your-frontend-url.vercel.app",
+    ],
+    credentials: true,
+  })
+);
+
 app.use(bodyParser.json());
 
 // ----------------- MongoDB connections -----------------
@@ -244,5 +253,5 @@ app.use("/api/digitalid", authMiddleware, digitalIdRouter);
 
 // ----------------- Start Server -----------------
 app.listen(PORT, () => {
-  console.log(`🚀 Backend running on http://localhost:${PORT}`);
+  console.log(`🚀 Backend running on port ${PORT}`);
 });
