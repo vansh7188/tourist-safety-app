@@ -98,7 +98,13 @@ export function createDigitalIdRouter(DigitalId) {
 
   router.get("/digital-id", async (req, res) => {
     try {
-      const ids = await DigitalId.find();
+      const { email } = req.query;
+      let ids;
+      if (email) {
+        ids = await DigitalId.find({ email });
+      } else {
+        ids = await DigitalId.find();
+      }
       res.json(ids);
     } catch (error) {
       res.status(500).json({ error: error.message });

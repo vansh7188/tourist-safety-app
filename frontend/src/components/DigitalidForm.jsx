@@ -121,7 +121,7 @@ function DigitalidForm() {
   setSuccess("");
   try {
     const token = localStorage.getItem("token"); // Get token from localStorage
-    const res = await fetch("http://localhost:5000/api/digital-id", {
+    const res = await fetch("http://localhost:5000/api/digitalid/digital-id", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
