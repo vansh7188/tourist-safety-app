@@ -1,1 +1,77 @@
 @import "tailwindcss";
+
+:root {
+	--ink: #0b1b1f;
+	--sea: #0f766e;
+	--sky: #0284c7;
+	--sun: #f59e0b;
+	--sand: #f6f3ea;
+	--glass: rgba(255, 255, 255, 0.82);
+	--glass-border: rgba(15, 118, 110, 0.18);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	font-family: "Space Grotesk", "Segoe UI", sans-serif;
+	color: var(--ink);
+	background: radial-gradient(circle at top, rgba(2, 132, 199, 0.18), transparent 45%),
+		radial-gradient(circle at 20% 30%, rgba(15, 118, 110, 0.18), transparent 40%),
+		linear-gradient(135deg, #f8fafc, #f1f5f9 60%, #e2e8f0);
+	min-height: 100vh;
+}
+
+#root {
+	min-height: 100vh;
+}
+
+.app-shell {
+	background: radial-gradient(circle at 80% 10%, rgba(245, 158, 11, 0.12), transparent 35%),
+		radial-gradient(circle at 10% 80%, rgba(14, 165, 233, 0.12), transparent 40%);
+}
+
+.app-header {
+	background: linear-gradient(135deg, #0f766e, #0284c7);
+	box-shadow: 0 18px 40px rgba(15, 118, 110, 0.25);
+}
+
+.section-card {
+	background: var(--glass);
+	border: 1px solid var(--glass-border);
+	border-radius: 24px;
+	box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+	backdrop-filter: blur(14px);
+}
+
+.section-title {
+	color: var(--sea);
+	letter-spacing: 0.02em;
+}
+
+.surface-muted {
+	background: rgba(255, 255, 255, 0.68);
+	border: 1px solid rgba(15, 118, 110, 0.12);
+}
+
+.btn-primary {
+	background: linear-gradient(135deg, #0f766e, #14b8a6);
+	color: #fff;
+	border-radius: 14px;
+	box-shadow: 0 12px 24px rgba(15, 118, 110, 0.25);
+}
+
+.btn-accent {
+	background: linear-gradient(135deg, #0284c7, #38bdf8);
+	color: #fff;
+	border-radius: 14px;
+	box-shadow: 0 12px 24px rgba(2, 132, 199, 0.25);
+}
+
+.btn-muted {
+	background: #94a3b8;
+	color: #fff;
+	border-radius: 14px;
+}

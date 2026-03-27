@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { FaEnvelope, FaLock, FaShieldAlt } from "react-icons/fa";
 
 function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -104,53 +105,61 @@ function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-skyblue-600">
-      <div className="relative w-[800px] h-[500px] overflow-hidden rounded-2xl shadow-2xl flex">
+    <div className="min-h-screen app-shell flex items-center justify-center px-6 py-10">
+      <div className="relative w-full max-w-4xl grid md:grid-cols-[1.1fr_0.9fr] overflow-hidden rounded-3xl shadow-2xl section-card">
         <motion.div
-          className={`absolute top-0 h-full w-1/2 flex flex-col justify-center p-8 transition-all duration-700 ${
-            isSignUp
-              ? "left-[400px] bg-gradient-to-br from-blue-200 to-blue-400 text-black"
-              : "left-0 bg-gradient-to-br from-blue-800 to-blue-600 text-white"
-          }`}
-          key={isSignUp ? "signup" : "signin"}
-          initial={{ opacity: 0, x: isSignUp ? 100 : -100 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0 }}
+          className="p-8 md:p-10 flex flex-col justify-center gap-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl font-bold text-center mb-6">
-            {isSignUp ? "Create Account" : "Welcome Back"}
-          </h2>
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+              Safe Travel
+            </p>
+            <h2 className="text-3xl font-extrabold text-slate-900">
+              {isSignUp ? "Create your account" : "Welcome back"}
+            </h2>
+            <p className="text-sm text-slate-600 mt-2">
+              {isSignUp
+                ? "Join to unlock live safety alerts and secure travel tools."
+                : "Sign in to access your safety dashboard."}
+            </p>
+          </div>
 
           <form onSubmit={handleAuth} className="flex flex-col gap-4">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className="p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-400"
-              required
-            />
+            <div className="flex items-center gap-3 rounded-xl border border-white/60 bg-white/80 px-4 py-3">
+              <FaEnvelope className="text-emerald-500" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                className="w-full bg-transparent outline-none text-sm"
+                required
+              />
+            </div>
 
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-400"
-              required
-            />
+            <div className="flex items-center gap-3 rounded-xl border border-white/60 bg-white/80 px-4 py-3">
+              <FaLock className="text-emerald-500" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full bg-transparent outline-none text-sm"
+                required
+              />
+            </div>
 
             <motion.button
               type="submit"
               disabled={loading}
-              className={`p-3 rounded-lg font-semibold text-white shadow-lg ${
-                loading
-                  ? "bg-gray-500 cursor-not-allowed"
-                  : "bg-blue-700 hover:bg-blue-800"
+              className={`py-3 rounded-xl font-semibold text-white shadow-lg ${
+                loading ? "bg-slate-400" : "btn-accent"
               }`}
-              whileHover={!loading ? { scale: 1.05 } : {}}
-              whileTap={!loading ? { scale: 0.95 } : {}}
+              whileHover={!loading ? { scale: 1.02 } : {}}
+              whileTap={!loading ? { scale: 0.98 } : {}}
             >
               {loading ? "Please wait..." : isSignUp ? "Sign Up" : "Login"}
             </motion.button>
@@ -162,7 +171,7 @@ function Auth() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="mt-4 p-3 rounded-lg text-center font-semibold bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg"
+              className="p-3 rounded-lg text-center font-semibold bg-rose-500 text-white shadow-lg"
             >
               ⚠️ {error}
             </motion.div>
@@ -174,17 +183,17 @@ function Auth() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="mt-4 p-3 rounded-lg text-center font-semibold bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
+              className="p-3 rounded-lg text-center font-semibold bg-emerald-500 text-white shadow-lg"
             >
               ✅ {success}
             </motion.div>
           )}
 
-          <div className="mt-6 text-center">
+          <div className="text-sm text-slate-600">
             {isSignUp ? (
               <button
                 type="button"
-                className="underline"
+                className="font-semibold text-emerald-600"
                 onClick={() => {
                   setIsSignUp(false);
                   setError("");
@@ -196,7 +205,7 @@ function Auth() {
             ) : (
               <button
                 type="button"
-                className="underline"
+                className="font-semibold text-emerald-600"
                 onClick={() => {
                   setIsSignUp(true);
                   setError("");
@@ -210,34 +219,24 @@ function Auth() {
         </motion.div>
 
         <motion.div
-          className={`absolute top-0 h-full w-1/2 flex flex-col justify-center items-center p-8 transition-all duration-700 ${
-            isSignUp
-              ? "left-0 bg-gradient-to-br from-indigo-500 to-blue-400 text-white"
-              : "left-[400px] bg-gradient-to-br from-blue-900 to-indigo-700 text-white"
-          }`}
-          key={isSignUp ? "info-signup" : "info-signin"}
-          initial={{ opacity: 0, x: isSignUp ? -100 : 100 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0 }}
+          className="hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-emerald-600 via-teal-600 to-sky-600 text-white"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
         >
-          {isSignUp ? (
-            <>
-              <h2 className="text-3xl font-bold mb-4">Hello New Friend! 👋</h2>
-              <p className="text-lg text-center">
-                Want me to help with Tourist Safety? Join us and start your
-                journey with a smart & safe travel experience.
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="text-3xl font-bold mb-4">Hello Traveler 🌍</h2>
-              <p className="text-lg text-center">
-                Continue your journey with us! Sign in to stay safe and explore
-                with confidence.
-              </p>
-            </>
-          )}
+          <div className="flex items-center gap-3 text-sm uppercase tracking-[0.3em] text-white/70">
+            <FaShieldAlt className="text-xl" />
+            Traveler Shield
+          </div>
+          <div>
+            <h3 className="text-3xl font-bold mb-3">
+              {isSignUp ? "Step into safer travel" : "Stay protected"}
+            </h3>
+            <p className="text-sm text-white/90">
+              Get live alerts, verified contacts, and directions to safe spots.
+            </p>
+          </div>
+          <div className="text-xs text-white/80">AI powered · Always on guard</div>
         </motion.div>
       </div>
     </div>

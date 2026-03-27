@@ -11,6 +11,8 @@ import DigitalidForm from "./components/DigitalidForm";
 import { TravelProvider } from "./context/TravelContext";
 import Chatbot from "./components/Chatbot";
 
+import AdminPanel from "./pages/AdminPanel";
+
 function App() {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
@@ -28,6 +30,7 @@ function App() {
           <Route path="digitalidform" element={<DigitalidForm />} />
           <Route path="digitalid/edit" element={<DigitalidForm />} />
           <Route path="chatbot" element={<Chatbot />} />
+          <Route path="admin" element={<AdminPanel />} />
         </Routes>
       </Router>
     </TravelProvider>

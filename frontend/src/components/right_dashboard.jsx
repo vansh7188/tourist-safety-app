@@ -124,19 +124,19 @@ function TripPlanner() {
 
   return (
     <motion.div
-      className="flex-1 max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-6 border border-blue-200"
+      className="flex-1 max-w-3xl mx-auto section-card p-6"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, type: "spring", stiffness: 120 }}
     >
-      <h2 className="text-blue-700 font-bold mb-3 text-lg flex items-center">
+      <h2 className="section-title font-bold mb-3 text-lg flex items-center">
         🧳 Trip Planner
       </h2>
 
       {/* Show Form or Trip Planner UI */}
       {!showForm && plannedLocations.length === 0 ? (
         <>
-          <p className="text-sm text-gray-600 mb-6">
+          <p className="text-sm text-slate-600 mb-6">
             Organize your travel itinerary, add destinations, and plan safe
             routes.
           </p>
@@ -144,7 +144,7 @@ function TripPlanner() {
           <motion.div whileHover={{ scale: 1.05 }} className="flex justify-center">
             <button
               onClick={() => setShowForm(true)}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition"
+              className="px-6 py-2 btn-accent hover:brightness-110 transition"
             >
               Plan Your Trip
             </button>
@@ -152,7 +152,7 @@ function TripPlanner() {
         </>
       ) : showForm ? (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <h3 className="text-md font-semibold text-gray-700 mb-2">
+          <h3 className="text-md font-semibold text-slate-700 mb-2">
             ✍️ Enter Locations (India only)
           </h3>
 
@@ -163,7 +163,7 @@ function TripPlanner() {
                 value={loc.name}
                 onChange={(e) => handleChange(index, e.target.value)}
                 placeholder={`Location ${index + 1}`}
-                className="w-full px-3 py-2 border rounded-lg shadow-sm focus:ring focus:ring-blue-300 outline-none"
+                className="w-full px-3 py-2 border rounded-lg shadow-sm focus:ring focus:ring-emerald-200 outline-none"
                 required
               />
               {/* Suggestions Dropdown */}
@@ -187,20 +187,20 @@ function TripPlanner() {
             <button
               type="button"
               onClick={handleAddLocation}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition"
+              className="px-4 py-2 btn-primary hover:brightness-110 transition"
             >
               + Add Location
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition"
+              className="px-6 py-2 btn-accent hover:brightness-110 transition"
             >
               Save Trip
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 bg-gray-400 text-white rounded-lg shadow-md hover:bg-gray-500 transition"
+              className="px-4 py-2 btn-muted hover:brightness-110 transition"
             >
               Cancel
             </button>
