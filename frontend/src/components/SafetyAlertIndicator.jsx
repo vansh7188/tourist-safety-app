@@ -48,7 +48,7 @@ function SafetyAlertIndicator() {
 
   return (
     <div ref={containerRef} className="relative flex flex-col items-end gap-1">
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-200">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-100">
         AI powered
       </span>
       <button

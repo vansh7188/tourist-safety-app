@@ -79,11 +79,19 @@ function ProfileForm() {
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center p-6 bg-gradient-to-r from-indigo-500 via--500 to-white-500">
-      <div className="w-full max-w-md bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-purple-300 relative">
-        <h2 className="text-3xl font-extrabold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-red-600 drop-shadow-lg">
-           Profile Arena
-        </h2>
+    <div className="min-h-screen flex justify-center items-center px-6 py-10 app-shell">
+      <div className="w-full max-w-2xl section-card p-8 md:p-10">
+        <div className="text-center mb-8">
+          <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
+            Safe Travel
+          </p>
+          <h2 className="text-3xl md:text-4xl font-extrabold section-title">
+            Profile Arena
+          </h2>
+          <p className="text-sm text-slate-600 mt-2">
+            Verify your contact details to unlock safety features.
+          </p>
+        </div>
 
         {/* Input Fields */}
         <input
@@ -92,22 +100,22 @@ function ProfileForm() {
           placeholder="👤 Name"
           value={form.name}
           onChange={handleChange}
-          className="w-full p-3 mb-4 border-2 border-transparent focus:border-indigo-500 rounded-xl shadow-md focus:shadow-lg outline-none transition-all duration-300"
+          className="w-full p-3 mb-4 border border-white/60 rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-200 outline-none transition"
         />
 
         {/* Email Section */}
-        <div className="mb-4">
+        <div className="mb-5">
           <input
             type="email"
             name="email"
             placeholder="📧 Email"
             value={form.email}
             onChange={handleChange}
-            className="w-full p-3 border-2 border-transparent focus:border-indigo-500 rounded-xl shadow-md focus:shadow-lg outline-none transition-all duration-300"
+            className="w-full p-3 border border-white/60 rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-200 outline-none transition"
           />
           {!emailVerified && (
-            <div className="flex gap-2 mt-2">
-              <button onClick={sendEmailOTP} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg shadow-md transition">
+            <div className="flex flex-col md:flex-row gap-2 mt-2">
+              <button onClick={sendEmailOTP} className="btn-accent px-4 py-2 text-sm hover:brightness-110 transition">
                 Send OTP
               </button>
               <input
@@ -115,29 +123,31 @@ function ProfileForm() {
                 placeholder="Enter OTP"
                 value={emailOTP}
                 onChange={(e) => setEmailOTP(e.target.value)}
-                className="border p-2 rounded-lg flex-1 outline-none shadow-sm"
+                className="border border-white/60 p-2 rounded-lg flex-1 outline-none shadow-sm"
               />
-              <button onClick={verifyEmailOTP} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg shadow-md transition">
+              <button onClick={verifyEmailOTP} className="btn-primary px-4 py-2 text-sm hover:brightness-110 transition">
                 Verify
               </button>
             </div>
           )}
-          {emailVerified && <span className="text-green-600 font-semibold text-sm mt-2 block">✅ Email Verified</span>}
+          {emailVerified && (
+            <span className="text-emerald-600 font-semibold text-sm mt-2 block">✅ Email Verified</span>
+          )}
         </div>
 
         {/* Contact Section */}
-        <div className="mb-4">
+        <div className="mb-5">
           <input
             type="text"
             name="contact"
             placeholder="📱 Contact Number"
             value={form.contact}
             onChange={handleChange}
-            className="w-full p-3 border-2 border-transparent focus:border-indigo-500 rounded-xl shadow-md focus:shadow-lg outline-none transition-all duration-300"
+            className="w-full p-3 border border-white/60 rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-200 outline-none transition"
           />
           {!contactVerified && (
-            <div className="flex gap-2 mt-2">
-              <button onClick={sendContactOTP} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg shadow-md transition">
+            <div className="flex flex-col md:flex-row gap-2 mt-2">
+              <button onClick={sendContactOTP} className="btn-accent px-4 py-2 text-sm hover:brightness-110 transition">
                 Send OTP
               </button>
               <input
@@ -145,14 +155,16 @@ function ProfileForm() {
                 placeholder="Enter OTP"
                 value={contactOTP}
                 onChange={(e) => setContactOTP(e.target.value)}
-                className="border p-2 rounded-lg flex-1 outline-none shadow-sm"
+                className="border border-white/60 p-2 rounded-lg flex-1 outline-none shadow-sm"
               />
-              <button onClick={verifyContactOTP} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg shadow-md transition">
+              <button onClick={verifyContactOTP} className="btn-primary px-4 py-2 text-sm hover:brightness-110 transition">
                 Verify
               </button>
             </div>
           )}
-          {contactVerified && <span className="text-green-600 font-semibold text-sm mt-2 block">✅ Contact Verified</span>}
+          {contactVerified && (
+            <span className="text-emerald-600 font-semibold text-sm mt-2 block">✅ Contact Verified</span>
+          )}
         </div>
 
         <input
@@ -161,14 +173,14 @@ function ProfileForm() {
           placeholder="📞 Alternate Contact Number"
           value={form.altContact}
           onChange={handleChange}
-          className="w-full p-3 mb-4 border-2 border-transparent focus:border-indigo-500 rounded-xl shadow-md focus:shadow-lg outline-none transition-all duration-300"
+          className="w-full p-3 mb-4 border border-white/60 rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-200 outline-none transition"
         />
 
         <select
           name="gender"
           value={form.gender}
           onChange={handleChange}
-          className="w-full p-3 mb-4 border-2 border-transparent focus:border-indigo-500 rounded-xl shadow-md focus:shadow-lg outline-none transition-all duration-300"
+          className="w-full p-3 mb-4 border border-white/60 rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-200 outline-none transition"
         >
           <option value="">⚧ Select Gender</option>
           <option value="Male">♂ Male</option>
@@ -183,13 +195,13 @@ function ProfileForm() {
           min="18"
           value={form.age}
           onChange={handleChange}
-          className="w-full p-3 mb-6 border-2 border-transparent focus:border-indigo-500 rounded-xl shadow-md focus:shadow-lg outline-none transition-all duration-300"
+          className="w-full p-3 mb-6 border border-white/60 rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-200 outline-none transition"
         />
 
         {/* Save Button */}
         <button
           onClick={submitProfile}
-          className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white py-3 rounded-xl font-bold shadow-lg hover:scale-105 hover:shadow-2xl transition transform duration-300"
+          className="w-full btn-primary py-3 font-bold hover:brightness-110 transition"
         >
           🚀 Save Profile
         </button>

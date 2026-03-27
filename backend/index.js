@@ -173,10 +173,76 @@ const getNearbyPlaces = async (location, category) => {
       name: place.displayName?.text || "Unknown",
       address: place.formattedAddress || "Address unavailable",
       distanceKm,
+      coordinates: placeLoc
+        ? { lat: placeLoc.latitude, lng: placeLoc.longitude }
+        : null,
     };
   });
 
   return results;
+};
+
+const getPlacesForQueries = async (queries, location) => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    throw new Error("GOOGLE_MAPS_API_KEY missing in .env");
+  }
+
+  const fieldMask = "places.displayName,places.formattedAddress,places.location";
+
+  const results = await Promise.all(
+    queries.map(async (query) => {
+      const body = {
+        textQuery: query,
+        maxResultCount: 1,
+      };
+
+      if (location?.lat && location?.lng) {
+        body.locationBias = {
+          circle: {
+            center: { latitude: location.lat, longitude: location.lng },
+            radius: 50000,
+          },
+        };
+      }
+
+      const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+          "X-Goog-FieldMask": fieldMask,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        console.warn("Places searchText error:", data.error?.message || res.statusText);
+        return null;
+      }
+
+      const place = data.places?.[0];
+      if (!place) return null;
+
+      const placeLoc = place.location;
+      return {
+        name: place.displayName?.text || query,
+        address: place.formattedAddress || "Address unavailable",
+        distanceKm:
+          location && placeLoc
+            ? haversineKm(
+                { lat: location.lat, lng: location.lng },
+                { lat: placeLoc.latitude, lng: placeLoc.longitude }
+              )
+            : null,
+        coordinates: placeLoc
+          ? { lat: placeLoc.latitude, lng: placeLoc.longitude }
+          : null,
+      };
+    })
+  );
+
+  return results.filter(Boolean).slice(0, 3);
 };
 
 const safetyAlerts = [
@@ -449,6 +515,7 @@ app.post("/api/chat", async (req, res) => {
 
       return res.status(200).json({
         reply: `Here are the closest options I found:\n${lines.join("\n")}`,
+        places,
       });
     }
 
@@ -466,19 +533,84 @@ User message: ${message}
 User location (if available): ${location?.lat || "N/A"}, ${location?.lng || "N/A"}
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+    let reply = "";
+    let places = [];
 
-    console.log("✅ Gemini response received");
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
 
-    const reply =
-      response.text ||
-      response.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Sorry, I could not generate a response right now.";
+      console.log("✅ Gemini response received");
 
-    res.status(200).json({ reply });
+      reply =
+        response.text ||
+        response.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "Sorry, I could not generate a response right now.";
+
+      if (GOOGLE_MAPS_API_KEY) {
+        const extractionPrompt = `
+You are extracting destination place names from a travel assistant response.
+Return ONLY valid JSON with this shape:
+{
+  "destinations": ["place 1", "place 2"]
+}
+Rules:
+- Include only specific destinations or venues, not generic advice
+- Max 3 destinations
+- If none, return an empty array
+
+User message: ${message}
+Assistant reply: ${reply}
+`;
+
+        try {
+          const extraction = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: extractionPrompt,
+          });
+
+          const extractionText =
+            extraction.text ||
+            extraction.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "";
+
+          const parsed = extractJson(extractionText);
+          const destinations = Array.isArray(parsed?.destinations)
+            ? parsed.destinations
+            : [];
+
+          if (destinations.length > 0) {
+            places = await getPlacesForQueries(destinations, location);
+          }
+        } catch (extractError) {
+          console.warn("Destination extraction failed:", extractError.message);
+        }
+      }
+    } catch (aiError) {
+      const errorText = aiError?.message || "";
+      const isRateLimited = errorText.includes("RESOURCE_EXHAUSTED") || errorText.includes("429");
+      console.warn("Gemini chat error:", aiError?.message || aiError);
+
+      reply = isRateLimited
+        ? "I am temporarily rate-limited. Try again soon."
+        : "Sorry, I could not generate a response right now.";
+
+      if (GOOGLE_MAPS_API_KEY) {
+        const destinationMatch = message.match(/\b(?:to|in|at|near|around|go to)\s+([^?.!]+)/i);
+        const destinationQuery = destinationMatch?.[1]?.trim();
+        if (destinationQuery) {
+          try {
+            places = await getPlacesForQueries([destinationQuery], location);
+          } catch (placesError) {
+            console.warn("Fallback destination lookup failed:", placesError.message);
+          }
+        }
+      }
+    }
+
+    res.status(200).json({ reply, places });
   } catch (err) {
     console.error("❌ Gemini chatbot error:", err);
     res.status(500).json({

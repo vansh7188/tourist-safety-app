@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaUserCircle } from "react-icons/fa";
+import MobileNavBar from "../components/MobileNavBar";
 import { useJsApiLoader } from "@react-google-maps/api";
 import LeftPanel from "../components/left_dashboard";
 import TripPlanner from "../components/right_dashboard";
@@ -13,6 +14,7 @@ const libraries = ["places"];
 
 function Dashboard() {
   const navigate = useNavigate();
+  const [showChatbot, setShowChatbot] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
@@ -60,10 +62,15 @@ function Dashboard() {
 
   return (
     <SafetyAlertsProvider>
-      <div className="min-h-screen flex flex-col bg-white text-blue-800">
-        <div className="flex items-center justify-between p-4 bg-blue-600 text-white shadow-md sticky top-0 z-50">
-          <div className="text-2xl font-extrabold tracking-wide drop-shadow">
-            ⚡ Smart Tourist Safety
+      <div className="min-h-screen flex flex-col app-shell text-slate-900">
+        <div className="hidden md:flex items-center justify-between px-6 py-4 app-header text-white sticky top-0 z-50">
+          <div>
+            <div className="text-xs uppercase tracking-[0.3em] text-white/70">
+              Safe Travel
+            </div>
+            <div className="text-2xl md:text-3xl font-extrabold tracking-wide drop-shadow">
+              Smart Tourist Safety
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -79,18 +86,56 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="flex flex-1 p-6 gap-6">
-          <LeftPanel
-            setStartLocation={setStartLocation}
-            setCurrentLocation={setCurrentLocation}
-            currentLocation={currentLocation}
-          />
-
-          <div className="flex-1 hidden md:flex flex-col gap-6 overflow-y-auto max-h-[calc(100vh-110px)] pr-2">
-            <TripPlanner tripPlan={tripPlan} setTripPlan={setTripPlan} />
-            <Chatbot />
+        <div className="md:hidden px-6 pt-6">
+          <div className="app-header rounded-2xl px-4 py-3 text-white flex items-center justify-between shadow-lg">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.3em] text-white/70">Safe Travel</div>
+              <div className="text-lg font-bold">Smart Safety</div>
+            </div>
+            <SafetyAlertIndicator />
           </div>
         </div>
+
+        <div className="flex flex-1 px-6 py-8 pb-28 md:pb-8">
+          <div className="w-full grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-6">
+            <LeftPanel
+              setStartLocation={setStartLocation}
+              setCurrentLocation={setCurrentLocation}
+              currentLocation={currentLocation}
+            />
+
+            <div className="flex flex-col gap-6">
+              <TripPlanner tripPlan={tripPlan} setTripPlan={setTripPlan} />
+              <div className="hidden lg:block">
+                <Chatbot />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <MobileNavBar
+          active="dashboard"
+          onChat={() => setShowChatbot(true)}
+          onNavigate={navigate}
+        />
+
+        {showChatbot && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-black/40 flex items-end justify-center">
+            <div className="w-full max-h-[85vh] rounded-t-3xl section-card p-4 overflow-y-auto">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-semibold text-slate-700">AI Safety Chatbot</div>
+                <button
+                  type="button"
+                  onClick={() => setShowChatbot(false)}
+                  className="text-xs font-semibold text-slate-500"
+                >
+                  Close
+                </button>
+              </div>
+              <Chatbot />
+            </div>
+          </div>
+        )}
       </div>
     </SafetyAlertsProvider>
   );

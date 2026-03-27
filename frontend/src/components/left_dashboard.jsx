@@ -18,17 +18,17 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
   console.log(currentLocation)
   return (
     <motion.div
-      className="flex-1 max-w-3xl mx-auto bg-blue-50 rounded-2xl shadow-xl p-6 border border-blue-200"
+      className="flex-1 max-w-3xl mx-auto section-card p-6"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, type: "spring", stiffness: 120 }}
     >
-      <h2 className="text-blue-700 font-bold mb-3 text-lg flex items-center">
+      <h2 className="section-title font-bold mb-3 text-lg flex items-center">
         🗺️ Your Location
       </h2>
 
       {/* Map Section */}
-      <div className="w-full h-110 rounded-xl overflow-hidden shadow-inner border border-blue-300">
+      <div className="w-full h-110 rounded-xl overflow-hidden shadow-inner border border-white/60">
         {showMap ? (
           <MapComponent
             setStartLocation={setStartLocation}
@@ -53,7 +53,7 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
         >
           <button
             onClick={() => setShowMap(true)}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition"
+            className="px-6 py-2 btn-primary hover:brightness-110 transition"
           >
             Start Live Tracking
           </button>
@@ -74,8 +74,8 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
 
       {/* Location Details */}
       {currentLocation && (
-        <div className="mt-6 p-4 bg-white rounded-lg shadow border text-sm">
-          <h3 className="font-bold text-blue-700 mb-2">📍 Current Location</h3>
+        <div className="mt-6 p-4 surface-muted rounded-lg shadow text-sm">
+          <h3 className="font-bold text-slate-800 mb-2">📍 Current Location</h3>
           <p><strong>Address:</strong> {currentLocation.displayName}</p>
           <p><strong>City:</strong> {currentLocation.city}</p>
           <p><strong>District:</strong> {currentLocation.district}</p>

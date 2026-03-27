@@ -75,6 +75,7 @@ function Chatbot() {
         {
           sender: "bot",
           text: data.reply || "Sorry, I could not generate a response.",
+          places: Array.isArray(data.places) ? data.places : null,
         },
       ]);
     } catch (error) {
@@ -97,8 +98,8 @@ function Chatbot() {
   };
 
   return (
-    <div className="w-full bg-white rounded-2xl shadow-xl border border-blue-200 p-6">
-      <h2 className="text-blue-700 font-bold mb-4 text-lg">
+    <div className="w-full section-card p-6">
+      <h2 className="section-title font-bold mb-4 text-lg">
         🤖 AI Safety Chatbot
       </h2>
 
@@ -106,7 +107,7 @@ function Chatbot() {
         <div className="mb-3 text-sm text-red-600">{locationError}</div>
       )}
 
-      <div className="h-[350px] overflow-y-auto border border-gray-200 rounded-xl p-4 mb-4 bg-gray-50">
+      <div className="h-[350px] overflow-y-auto border border-white/60 rounded-xl p-4 mb-4 bg-white/70">
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -117,18 +118,58 @@ function Chatbot() {
             <div
               className={`px-4 py-3 rounded-2xl max-w-[80%] whitespace-pre-wrap leading-relaxed ${
                 msg.sender === "user"
-                  ? "bg-blue-100 text-gray-900"
-                  : "bg-gray-200 text-gray-900"
+                  ? "bg-emerald-100 text-slate-900"
+                  : "bg-amber-50 text-slate-900"
               }`}
             >
               {msg.text}
+              {Array.isArray(msg.places) && msg.places.length > 0 && (
+                <div className="mt-3 flex flex-col gap-2">
+                  {msg.places.map((place, placeIndex) => {
+                    const hasCoords = place.coordinates?.lat && place.coordinates?.lng;
+                    const destination = hasCoords
+                      ? `${place.coordinates.lat},${place.coordinates.lng}`
+                      : encodeURIComponent(place.address || place.name);
+                    const directionsUrl = hasCoords
+                      ? `https://www.google.com/maps/dir/?api=1&destination=${destination}`
+                      : `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+
+                    return (
+                      <div
+                        key={`${place.name}-${placeIndex}`}
+                        className="rounded-xl border border-emerald-100 bg-white/90 px-3 py-2"
+                      >
+                        <div className="text-sm font-semibold text-gray-900">
+                          {place.name}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {place.address}
+                        </div>
+                        {typeof place.distanceKm === "number" && (
+                          <div className="text-xs text-gray-500">
+                            {place.distanceKm.toFixed(1)} km away
+                          </div>
+                        )}
+                        <a
+                          href={directionsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700"
+                        >
+                          Directions
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         ))}
 
         {loading && (
           <div className="mb-3 flex justify-start">
-            <div className="px-4 py-3 rounded-2xl bg-gray-200 text-gray-900">
+            <div className="px-4 py-3 rounded-2xl bg-amber-50 text-slate-900">
               Typing...
             </div>
           </div>
@@ -142,12 +183,12 @@ function Chatbot() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-1 px-4 py-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-300"
+          className="flex-1 px-4 py-3 border border-white/60 rounded-xl outline-none focus:ring-2 focus:ring-emerald-200"
         />
         <button
           onClick={sendMessage}
           disabled={loading}
-          className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-70"
+          className="px-6 py-3 btn-accent hover:brightness-110 transition disabled:opacity-70"
         >
           {loading ? "..." : "Send"}
         </button>
