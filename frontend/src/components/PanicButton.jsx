@@ -13,6 +13,8 @@ function PanicButton({ currentLocation }) {
   const [notifications, setNotifications] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [panicQuery, setPanicQuery] = useState("");
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
 
   const pushNotification = useCallback((message, tone = "info") => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -39,13 +41,86 @@ function PanicButton({ currentLocation }) {
     };
   };
 
-  const handlePanic = useCallback(async (voiceQuery) => {
+  const stopCameraStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+ const capturePanicPhotos = useCallback(async () => {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    pushNotification("Camera not supported in this browser.", "warning");
+    console.error("Camera API not supported in this browser.");
+    return [];
+  }
+
+  try {
+    console.log("Opening camera for panic photos...");
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    streamRef.current = stream;
+    console.log("Camera stream started.");
+
+    if (!videoRef.current) return [];
+
+    videoRef.current.srcObject = stream;
+
+    // Wait for metadata + ensure video actually starts
+    await new Promise((resolve) => {
+      videoRef.current.onloadedmetadata = () => resolve();
+    });
+
+    await videoRef.current.play();
+    console.log("Camera video playback started.");
+
+    // 🔥 CRITICAL FIX: wait for frames to be ready
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const canvas = document.createElement("canvas");
+    const video = videoRef.current;
+
+    // 🔥 FIX: ensure valid dimensions
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+    const photos = [];
+
+    for (let i = 0; i < 3; i++) {
+      ctx.drawImage(video, 0, 0, width, height);
+      photos.push(canvas.toDataURL("image/jpeg", 0.8));
+      console.log(`Captured panic photo ${i + 1}/3`);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+
+    console.log("Finished capturing panic photos.");
+    return photos;
+  } catch (err) {
+    console.error("Camera capture error:", err);
+    pushNotification("Could not access camera.", "warning");
+    return [];
+  } finally {
+    // 🔥 safer cleanup
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }
+}, [pushNotification]);
+
+  const handlePanic = useCallback(async (voiceQueryOrEvent) => {
     console.log("🔴 Panic button clicked or voice command detected!");
 
-    const finalQuery = (panicQuery || voiceQuery || transcript).trim();
+    const voiceQuery = typeof voiceQueryOrEvent === "string" ? voiceQueryOrEvent : "";
+    const finalQuery = String(panicQuery || voiceQuery || transcript || "").trim();
 
     setIsSending(true);
     setTimeout(() => setIsSending(false), 4000);
+
+    const capturedPhotos = voiceQuery ? [] : await capturePanicPhotos();
 
     const digitalIdData = localStorage.getItem("digitalIdData");
     if (!digitalIdData) {
@@ -90,7 +165,40 @@ function PanicButton({ currentLocation }) {
     const token = localStorage.getItem("token");
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/digitalid/panic`, {
+      if (capturedPhotos.length > 0) {
+        try {
+          const photoResponse = await fetch(`${API_BASE_URL}/api/digitalid/panic-photos`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              email: panicPayload.email,
+              contact_number: panicPayload.contact_number,
+              panic_photos: capturedPhotos,
+            }),
+          });
+
+          const photoResult = await photoResponse.json().catch(() => ({}));
+          if (!photoResponse.ok) {
+            console.error("❌ Failed to save panic photos:", photoResult || photoResponse.status);
+            pushNotification("Failed to save panic photos.", "error");
+          } else if (photoResult?.photoUrls?.length) {
+            console.log("Panic photo URLs:", photoResult.photoUrls);
+          }
+        } catch (photoError) {
+          console.error("❌ Panic photo upload error:", photoError);
+          pushNotification("Panic photo upload error.", "error");
+        }
+      }
+
+      if (!token) {
+        pushNotification("Please login to send panic request.", "warning");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/digitalid/panic`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,7 +243,7 @@ function PanicButton({ currentLocation }) {
       console.error("⚠️ Error sending panic data:", err);
       pushNotification(`Error sending panic request: ${err.message}`, "error");
     }
-  }, [currentLocation, navigate, panicQuery, pushNotification, transcript]);
+  }, [capturePanicPhotos, currentLocation, navigate, panicQuery, pushNotification, transcript]);
 
   // Initialize Web Speech API
   useEffect(() => {
@@ -216,6 +324,7 @@ function PanicButton({ currentLocation }) {
 
   return (
     <div className="flex flex-col gap-4 items-start">
+      <video ref={videoRef} className="hidden" playsInline muted />
       {/* Notifications */}
       {notifications.length > 0 && (
         <div className="fixed top-5 right-5 z-50 flex flex-col gap-2">

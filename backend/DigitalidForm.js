@@ -5,6 +5,8 @@ import mongoose from "mongoose";
 import twilio from "twilio";
 import nodemailer from "nodemailer";
 import Panic from "./models/panic.js";
+import PanicMedia from "./models/panicMedia.js";
+import { v2 as cloudinary } from "cloudinary";
 // --- Schemas (Exported so index.js can use them) ---
 
 const emergencyContactSchema = new mongoose.Schema({
@@ -90,6 +92,20 @@ const digitalIdSchema = new mongoose.Schema({
 // It takes the 'DigitalId' model as a dependency.
 export function createDigitalIdRouter(DigitalId) {
   const router = express.Router();
+
+  const cloudinaryConfigured = Boolean(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+  );
+
+  if (cloudinaryConfigured) {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+  }
 
   const twilioClient =
     process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
@@ -185,9 +201,70 @@ export function createDigitalIdRouter(DigitalId) {
   }
 });
 
+router.post("/panic-photos", async (req, res) => {
+  try {
+    const email = req.user?.email || req.body.email;
+    const contactNumber = req.body.contact_number || req.body.contactNumber;
+    const incomingPhotos = Array.isArray(req.body.panic_photos)
+      ? req.body.panic_photos.filter(Boolean).slice(0, 3)
+      : [];
+
+    if (!email || !contactNumber) {
+      return res.status(400).json({ error: "Email and contact number are required" });
+    }
+
+    if (!cloudinaryConfigured) {
+      return res.status(500).json({ error: "Cloudinary not configured" });
+    }
+
+    if (incomingPhotos.length === 0) {
+      return res.status(400).json({ error: "No photos provided" });
+    }
+
+    const isDataUrl = (value) => typeof value === "string" && value.startsWith("data:");
+
+    let photoUrls = [];
+    if (incomingPhotos.length > 0) {
+      const invalidPhotos = incomingPhotos.filter((photo) => !isDataUrl(photo));
+      if (invalidPhotos.length > 0) {
+        return res.status(400).json({ error: "Invalid photo data" });
+      }
+
+      const uploadResults = await Promise.all(
+        incomingPhotos.map((photo) =>
+          cloudinary.uploader.upload(photo, {
+            folder: "panic_photos",
+            resource_type: "image",
+          })
+        )
+      );
+
+      photoUrls = uploadResults.map((r) => r.secure_url).filter(Boolean);
+    }
+
+    const mediaRecord = new PanicMedia({
+      email,
+      contact_number: contactNumber,
+      photo_urls: photoUrls,
+    });
+
+    await mediaRecord.save();
+
+    return res.status(201).json({
+      message: "Photos saved",
+      photoUrls,
+      data: mediaRecord,
+    });
+  } catch (error) {
+    console.error("Error saving panic photos:", error);
+    return res.status(500).json({ message: "Failed to save photos", error });
+  }
+});
+
 router.post("/panic", async (req, res) => {
   try {
     const panicData = { ...req.body, email: req.user?.email || req.body.email };
+    delete panicData.panic_photos;
 
     const digitalIdSnapshot = {
       name: panicData.name || "",

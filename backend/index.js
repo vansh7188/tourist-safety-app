@@ -201,7 +201,7 @@ app.use(
   })
 );
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "25mb" }));
 
 // ----------------- MongoDB connections -----------------
 mongoose
@@ -231,6 +231,10 @@ const User = mongoose.model("User", userSchema);
 
 // ----------------- Auth Middleware -----------------
 const authMiddleware = (req, res, next) => {
+  if (req.baseUrl === "/api/digitalid" && req.path === "/panic-photos") {
+    return next();
+  }
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
