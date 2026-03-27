@@ -101,13 +101,20 @@ function DigitalId() {
                 {digitalId.emergencyContacts.map((c, idx) => (
                   <li key={idx}>
                     {c.name} ({c.relation}) - {c.contact}
+                    {c.email ? ` | ${c.email}` : ""}
                   </li>
                 ))}
               </ul>
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              onClick={() => navigate("/digitalid/edit", { state: { digitalId } })}
+              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition"
+            >
+              Edit ID
+            </button>
             <button
               onClick={onDiscardClick}
               className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition"

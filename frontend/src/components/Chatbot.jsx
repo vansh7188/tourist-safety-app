@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 function Chatbot() {
   const [message, setMessage] = useState("");
@@ -9,7 +9,36 @@ function Chatbot() {
     },
   ]);
   const [loading, setLoading] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const [locationError, setLocationError] = useState("");
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported in this browser.");
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setCoords({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setLocationError("");
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationError("Location permission denied. Enable it to find nearby places.");
+        } else {
+          setLocationError("Unable to fetch your location.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
 
   const sendMessage = async () => {
     if (!message.trim() || loading) return;
@@ -29,7 +58,10 @@ function Chatbot() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: currentMessage }),
+        body: JSON.stringify({
+          message: currentMessage,
+          location: coords,
+        }),
       });
 
       const data = await res.json();
@@ -69,6 +101,10 @@ function Chatbot() {
       <h2 className="text-blue-700 font-bold mb-4 text-lg">
         🤖 AI Safety Chatbot
       </h2>
+
+      {locationError && (
+        <div className="mb-3 text-sm text-red-600">{locationError}</div>
+      )}
 
       <div className="h-[350px] overflow-y-auto border border-gray-200 rounded-xl p-4 mb-4 bg-gray-50">
         {messages.map((msg, index) => (

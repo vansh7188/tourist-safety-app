@@ -18,18 +18,18 @@ const MapComponent = ({ setStartLocation, setCurrentLocation }) => {
   const [currentCoords, setCurrentCoords] = useState(null);
   const [path, setPath] = useState([]);
 
-  const parseLocationDetails = (data, lat, lon) => {
-    const components = data.results?.[0]?.address_components || [];
+  const parseLocationDetails = (result, lat, lon) => {
+    const components = result?.address_components || [];
     const getComp = (type) =>
       components.find((c) => c.types.includes(type))?.long_name || "N/A";
 
     return {
-      displayName: data.results?.[0]?.formatted_address || "Unknown",
-      placeId: data.results?.[0]?.place_id || "N/A",
+      displayName: result?.formatted_address || "Unknown",
+      placeId: result?.place_id || "N/A",
       latitude: lat,
       longitude: lon,
       class: "place",
-      type: data.results?.[0]?.types?.[0] || "N/A",
+      type: result?.types?.[0] || "N/A",
       state: getComp("administrative_area_level_1"),
       district:
         getComp("administrative_area_level_2") ||
@@ -45,19 +45,50 @@ const MapComponent = ({ setStartLocation, setCurrentLocation }) => {
   };
 
   const fetchLocationDetails = async (lat, lon, isStart = false) => {
-    try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${
-          import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-        }`
-      );
-      const data = await res.json();
-      const details = parseLocationDetails(data, lat, lon);
+    let details = null;
 
-      if (isStart) setStartLocation(details);
-      else setCurrentLocation(details);
+    try {
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      if (apiKey) {
+        const res = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`
+        );
+        const data = await res.json();
+
+        if (data.status === "OK" && data.results?.[0]) {
+          details = parseLocationDetails(data.results[0], lat, lon);
+        } else {
+          console.warn("Geocode API response:", data.status, data.error_message);
+        }
+      }
     } catch (err) {
       console.error("Error fetching location details:", err);
+    }
+
+    if (!details && window.google?.maps?.Geocoder) {
+      try {
+        const geocoder = new window.google.maps.Geocoder();
+        const geocodeResult = await new Promise((resolve, reject) => {
+          geocoder.geocode(
+            { location: { lat, lng: lon } },
+            (results, status) => {
+              if (status === "OK" && results?.[0]) {
+                resolve(results[0]);
+              } else {
+                reject(new Error(`Geocoder failed: ${status}`));
+              }
+            }
+          );
+        });
+        details = parseLocationDetails(geocodeResult, lat, lon);
+      } catch (err) {
+        console.error("Geocoder JS API error:", err);
+      }
+    }
+
+    if (details) {
+      if (isStart) setStartLocation(details);
+      else setCurrentLocation(details);
     }
   };
 
