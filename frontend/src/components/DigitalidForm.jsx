@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 function DigitalidForm() {
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const navigateto = useNavigate();
+  const location = useLocation();
+  const isEditMode =
+    location.pathname.toLowerCase().includes("digitalid/edit") ||
+    location.state?.mode === "edit";
   const [formData, setFormData] = useState({
     email: "",
     name: "",
@@ -13,19 +17,85 @@ function DigitalidForm() {
     passportCountry: "",
     passportNumber: "",
     emergencyContacts: [
-      { name: "", contact: "", relation: "" },
-      { name: "", contact: "", relation: "" },
+      { name: "", email: "", contact: "", relation: "" },
+      { name: "", email: "", contact: "", relation: "" },
     ],
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+  const [initializing, setInitializing] = useState(false);
 
   // Auto-fill email from localStorage on mount
   useEffect(() => {
     const emailFromStorage = localStorage.getItem("email") || "";
     setFormData((prev) => ({ ...prev, email: emailFromStorage }));
   }, []);
+
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    const existingFromState = location.state?.digitalId;
+    const existingFromStorage = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("digitalIdData") || "null");
+      } catch {
+        return null;
+      }
+    })();
+
+    const existing = existingFromState || existingFromStorage;
+    if (existing) {
+      setFormData((prev) => ({
+        ...prev,
+        ...existing,
+        email: existing.email || prev.email,
+        emergencyContacts:
+          existing.emergencyContacts?.length > 0
+            ? existing.emergencyContacts
+            : prev.emergencyContacts,
+      }));
+      return;
+    }
+
+    const fetchExisting = async () => {
+      try {
+        setInitializing(true);
+        const token = localStorage.getItem("token");
+        const email = localStorage.getItem("email") || "";
+        if (!email) return;
+
+        const res = await fetch(
+          `${API_BASE_URL}/api/digitalid/digital-id?email=${encodeURIComponent(email)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!res.ok) throw new Error("Failed to fetch Digital ID");
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const existingId = data[0];
+          setFormData((prev) => ({
+            ...prev,
+            ...existingId,
+            email: existingId.email || prev.email,
+            emergencyContacts:
+              existingId.emergencyContacts?.length > 0
+                ? existingId.emergencyContacts
+                : prev.emergencyContacts,
+          }));
+        }
+      } catch (err) {
+        setErrors({ api: err.message });
+      } finally {
+        setInitializing(false);
+      }
+    };
+
+    fetchExisting();
+  }, [API_BASE_URL, isEditMode, location.state]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -96,6 +166,15 @@ function DigitalidForm() {
         newErrors[`emergency-${i}-name`] = "Name must be letters only.";
         break;
       }
+      if (!c.email.trim()) {
+        newErrors[`emergency-${i}-email`] = "Email is required.";
+        break;
+      } else if (
+        !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(c.email)
+      ) {
+        newErrors[`emergency-${i}-email`] = "Invalid email address.";
+        break;
+      }
       if (!c.contact.trim()) {
         newErrors[`emergency-${i}-contact`] = "Contact is required.";
         break;
@@ -116,50 +195,57 @@ function DigitalidForm() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validate()) return;
-  setLoading(true);
-  setSuccess("");
-  try {
-    const token = localStorage.getItem("token"); // Get token from localStorage
-    const res = await fetch(`${API_BASE_URL}/api/digitalid/digital-id`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // Include token in header
-      },
-      body: JSON.stringify(formData),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || "Something went wrong");
+    e.preventDefault();
+    if (!validate()) return;
+    setLoading(true);
+    setSuccess("");
+    try {
+      const token = localStorage.getItem("token");
+      const email = localStorage.getItem("email") || formData.email;
+      const payload = { ...formData, email };
+      const res = await fetch(`${API_BASE_URL}/api/digitalid/digital-id`, {
+        method: isEditMode ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+      setSuccess(
+        isEditMode
+          ? "Digital ID updated successfully!"
+          : "Digital ID created successfully!"
+      );
+
+      localStorage.setItem("digitalIdData", JSON.stringify(data.data));
+
+      if (!isEditMode) {
+        setFormData({
+          email: localStorage.getItem("email") || "",
+          name: "",
+          contactInfo: "",
+          kyc: "aadhaar",
+          aadhaarNumber: "",
+          passportCountry: "",
+          passportNumber: "",
+          emergencyContacts: [
+            { name: "", email: "", contact: "", relation: "" },
+            { name: "", email: "", contact: "", relation: "" },
+          ],
+        });
+      }
+
+      navigateto(-1);
+    } catch (error) {
+      setErrors({ api: error.message });
+    } finally {
+      setLoading(false);
     }
-    setSuccess("✅ Digital ID created successfully!");
-
-    // Save complete digital ID object in localStorage as string
-    localStorage.setItem("digitalIdData", JSON.stringify(data.data));
-    console.log("Stored Digital ID in localStorage:", JSON.parse(localStorage.getItem("digitalIdData")));
-
-    setFormData({
-      email: localStorage.getItem("email") || "",
-      name: "",
-      contactInfo: "",
-      kyc: "aadhaar",
-      aadhaarNumber: "",
-      passportCountry: "",
-      passportNumber: "",
-      emergencyContacts: [
-        { name: "", contact: "", relation: "" },
-        { name: "", contact: "", relation: "" },
-      ],
-    });
-    navigateto(-1);
-  } catch (error) {
-    setErrors({ api: error.message });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-50 p-6">
@@ -168,7 +254,7 @@ function DigitalidForm() {
         className="w-full max-w-2xl bg-white shadow-xl rounded-2xl p-8 border border-blue-200"
       >
         <h2 className="text-3xl font-bold text-blue-800 mb-6 text-center">
-          Create Your Digital ID
+          {isEditMode ? "Edit Your Digital ID" : "Create Your Digital ID"}
         </h2>
         {/* Backend error or Success */}
         {errors.api && (
@@ -176,6 +262,9 @@ function DigitalidForm() {
         )}
         {success && (
           <p className="text-green-600 text-center mb-4">{success}</p>
+        )}
+        {initializing && (
+          <p className="text-blue-600 text-center mb-4">Loading digital ID...</p>
         )}
 
         {/* Email */}
@@ -323,7 +412,7 @@ function DigitalidForm() {
           Emergency Contacts
         </h3>
         {formData.emergencyContacts.map((c, i) => (
-          <div key={i} className="grid grid-cols-3 gap-4 mb-4">
+          <div key={i} className="grid grid-cols-4 gap-4 mb-4">
             <input
               type="text"
               placeholder="Name"
@@ -332,6 +421,15 @@ function DigitalidForm() {
               }`}
               value={c.name}
               onChange={(e) => handleEmergencyChange(i, "name", e.target.value)}
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              className={`rounded-lg border p-2 ${
+                errors[`emergency-${i}-email`] ? "border-red-500" : "border-gray-300"
+              }`}
+              value={c.email}
+              onChange={(e) => handleEmergencyChange(i, "email", e.target.value)}
             />
             <input
               type="text"
@@ -355,7 +453,16 @@ function DigitalidForm() {
         ))}
 
         {/* Submit */}
-        <div className="text-center">
+        <div className="text-center flex flex-wrap justify-center gap-3">
+          {isEditMode && (
+            <button
+              type="button"
+              onClick={() => navigateto(-1)}
+              className="px-8 py-3 font-bold rounded-lg shadow-md transition bg-gray-300 text-gray-800 hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -363,7 +470,11 @@ function DigitalidForm() {
               loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
-            {loading ? "Submitting..." : "Submit Digital ID"}
+            {loading
+              ? "Submitting..."
+              : isEditMode
+              ? "Update Digital ID"
+              : "Submit Digital ID"}
           </button>
         </div>
       </form>

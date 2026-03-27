@@ -24,6 +24,161 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+
+const validatePlacesApiKey = async () => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    console.warn("⚠️ GOOGLE_MAPS_API_KEY missing. Nearby place search will fail.");
+    return;
+  }
+
+  try {
+    const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+        "X-Goog-FieldMask": "places.id",
+      },
+      body: JSON.stringify({
+        textQuery: "police station",
+        maxResultCount: 1,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      console.warn(
+        "⚠️ Places API (New) check failed:",
+        data.error?.message || res.statusText
+      );
+    } else {
+      console.log("✅ Places API (New) check ok");
+    }
+  } catch (err) {
+    console.warn("⚠️ Places API (New) check error:", err.message);
+  }
+};
+
+const haversineKm = (a, b) => {
+  const toRad = (v) => (v * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+};
+
+const getNearbyPlaces = async (location, category) => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    throw new Error("GOOGLE_MAPS_API_KEY missing in .env");
+  }
+
+  const { lat, lng } = location;
+  const radiusMeters = 3000;
+  const fieldMask = "places.displayName,places.formattedAddress,places.location";
+
+  const searchNearby = async (includedTypes, keyword) => {
+    const res = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+        "X-Goog-FieldMask": fieldMask,
+      },
+      body: JSON.stringify({
+        includedTypes,
+        maxResultCount: 10,
+        locationRestriction: {
+          circle: {
+            center: { latitude: lat, longitude: lng },
+            radius: radiusMeters,
+          },
+        },
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error?.message || "Failed to fetch nearby places");
+    }
+
+    let places = data.places || [];
+    if (keyword) {
+      const lower = keyword.toLowerCase();
+      places = places.filter((place) =>
+        place.displayName?.text?.toLowerCase().includes(lower)
+      );
+    }
+
+    return places;
+  };
+
+  const searchText = async (textQuery) => {
+    const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+        "X-Goog-FieldMask": fieldMask,
+      },
+      body: JSON.stringify({
+        textQuery,
+        maxResultCount: 10,
+        locationBias: {
+          circle: {
+            center: { latitude: lat, longitude: lng },
+            radius: radiusMeters,
+          },
+        },
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error?.message || "Failed to fetch nearby places");
+    }
+
+    return data.places || [];
+  };
+
+  let places = [];
+  if (category === "police") {
+    places = await searchNearby(["police"]);
+  } else if (category === "hospital") {
+    places = await searchNearby(["hospital"]);
+  } else if (category === "hotel") {
+    places = await searchNearby(["lodging"], "hotel");
+  } else if (category === "hostel") {
+    places = await searchNearby(["lodging"], "hostel");
+  } else if (category === "highway") {
+    places = await searchText("highway near me");
+  } else {
+    places = await searchText(`${category} near me`);
+  }
+
+  const results = places.slice(0, 3).map((place) => {
+    const placeLoc = place.location;
+    const distanceKm = placeLoc
+      ? haversineKm(
+          { lat, lng },
+          { lat: placeLoc.latitude, lng: placeLoc.longitude }
+        )
+      : null;
+    return {
+      name: place.displayName?.text || "Unknown",
+      address: place.formattedAddress || "Address unavailable",
+      distanceKm,
+    };
+  });
+
+  return results;
+};
+
 // ----------------- Middleware -----------------
 const allowedOrigins = [
   "http://localhost:5173",
@@ -214,7 +369,7 @@ app.post("/api/chat", async (req, res) => {
     console.log("✅ Chat route hit");
     console.log("Body:", req.body);
 
-    const { message } = req.body;
+    const { message, location } = req.body;
 
     if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({ error: "GEMINI_API_KEY missing in .env" });
@@ -222,6 +377,45 @@ app.post("/api/chat", async (req, res) => {
 
     if (!message || !message.trim()) {
       return res.status(400).json({ error: "Message is required" });
+    }
+
+    const normalized = message.toLowerCase();
+    const nearbyMatch = normalized.match(
+      /(nearest|nearby)\s+(police|police station|hospital|hotel|hostel|highway|roads|road|highways)/
+    );
+
+    if (nearbyMatch) {
+      if (!location || typeof location.lat !== "number" || typeof location.lng !== "number") {
+        return res.status(200).json({
+          reply:
+            "Please enable location access so I can find nearby places for you.",
+        });
+      }
+
+      const rawCategory = nearbyMatch[2]
+        .replace("police station", "police")
+        .replace("highways", "highway")
+        .replace("roads", "road")
+        .replace("road", "highway");
+
+      const places = await getNearbyPlaces(location, rawCategory);
+
+      if (!places.length) {
+        return res.status(200).json({
+          reply: "I could not find nearby places for that request. Try a different query.",
+        });
+      }
+
+      const lines = places.map((place, index) => {
+        const distance = place.distanceKm
+          ? ` (${place.distanceKm.toFixed(1)} km)`
+          : "";
+        return `${index + 1}. ${place.name}${distance} - ${place.address}`;
+      });
+
+      return res.status(200).json({
+        reply: `Here are the closest options I found:\n${lines.join("\n")}`,
+      });
     }
 
     const prompt = `
@@ -235,6 +429,7 @@ Rules:
 - Do not give illegal or dangerous advice
 
 User message: ${message}
+User location (if available): ${location?.lat || "N/A"}, ${location?.lng || "N/A"}
 `;
 
     const response = await ai.models.generateContent({
@@ -265,4 +460,5 @@ app.use("/api/digitalid", authMiddleware, digitalIdRouter);
 // ----------------- Start Server -----------------
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);
+  validatePlacesApiKey();
 });

@@ -42,6 +42,7 @@ const PanicSchema = new mongoose.Schema({
       relation: { type: String }
     }
   ],
+  panic_query: { type: String },
   locations: [LocationSchema] // ✅ use subschema
 }, { timestamps: true });
 

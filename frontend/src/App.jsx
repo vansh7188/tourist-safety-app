@@ -26,6 +26,7 @@ function App() {
           <Route path="dashboard" element={<Dashboard isLoaded={isLoaded} />} />
           <Route path="profile" element={<Pfile />} />
           <Route path="digitalidform" element={<DigitalidForm />} />
+          <Route path="digitalid/edit" element={<DigitalidForm />} />
           <Route path="chatbot" element={<Chatbot />} />
         </Routes>
       </Router>
