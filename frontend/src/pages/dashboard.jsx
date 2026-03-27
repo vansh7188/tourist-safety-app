@@ -6,6 +6,8 @@ import { useJsApiLoader } from "@react-google-maps/api";
 import LeftPanel from "../components/left_dashboard";
 import TripPlanner from "../components/right_dashboard";
 import Chatbot from "../components/Chatbot";
+import SafetyAlertIndicator from "../components/SafetyAlertIndicator";
+import { SafetyAlertsProvider } from "../context/SafetyAlertsContext";
 
 const libraries = ["places"];
 
@@ -57,35 +59,40 @@ function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-blue-800">
-      <div className="flex items-center justify-between p-4 bg-blue-600 text-white shadow-md sticky top-0 z-50">
-        <div className="text-2xl font-extrabold tracking-wide drop-shadow">
-          ⚡ Smart Tourist Safety
+    <SafetyAlertsProvider>
+      <div className="min-h-screen flex flex-col bg-white text-blue-800">
+        <div className="flex items-center justify-between p-4 bg-blue-600 text-white shadow-md sticky top-0 z-50">
+          <div className="text-2xl font-extrabold tracking-wide drop-shadow">
+            ⚡ Smart Tourist Safety
+          </div>
+
+          <div className="flex items-center gap-4">
+            <SafetyAlertIndicator />
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              className="flex flex-col items-center cursor-pointer"
+              onClick={() => navigate("/profile")}
+            >
+              <FaUserCircle className="text-4xl" />
+              <span className="text-xs mt-1">Profile</span>
+            </motion.div>
+          </div>
         </div>
 
-        <motion.div
-          whileHover={{ scale: 1.1 }}
-          className="flex flex-col items-center cursor-pointer"
-          onClick={() => navigate("/profile")}
-        >
-          <FaUserCircle className="text-4xl" />
-          <span className="text-xs mt-1">Profile</span>
-        </motion.div>
-      </div>
+        <div className="flex flex-1 p-6 gap-6">
+          <LeftPanel
+            setStartLocation={setStartLocation}
+            setCurrentLocation={setCurrentLocation}
+            currentLocation={currentLocation}
+          />
 
-      <div className="flex flex-1 p-6 gap-6">
-        <LeftPanel
-          setStartLocation={setStartLocation}
-          setCurrentLocation={setCurrentLocation}
-          currentLocation={currentLocation}
-        />
-
-        <div className="flex-1 hidden md:flex flex-col gap-6 overflow-y-auto max-h-[calc(100vh-110px)] pr-2">
-          <TripPlanner tripPlan={tripPlan} setTripPlan={setTripPlan} />
-          <Chatbot />
+          <div className="flex-1 hidden md:flex flex-col gap-6 overflow-y-auto max-h-[calc(100vh-110px)] pr-2">
+            <TripPlanner tripPlan={tripPlan} setTripPlan={setTripPlan} />
+            <Chatbot />
+          </div>
         </div>
       </div>
-    </div>
+    </SafetyAlertsProvider>
   );
 }
 

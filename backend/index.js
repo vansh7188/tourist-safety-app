@@ -179,6 +179,36 @@ const getNearbyPlaces = async (location, category) => {
   return results;
 };
 
+const safetyAlerts = [
+  {
+    id: "alert-001",
+    type: "danger",
+    coordinates: { lat: 28.6139, lng: 77.209 },
+    radiusKm: 1.5,
+    severity: "high",
+    message: "High crime area reported in this zone.",
+    source: "ai",
+  },
+  {
+    id: "alert-002",
+    type: "low_network",
+    coordinates: { lat: 28.6215, lng: 77.2156 },
+    radiusKm: 2.5,
+    severity: "medium",
+    message: "Low internet coverage reported nearby.",
+    source: "ai",
+  },
+  {
+    id: "alert-003",
+    type: "info",
+    coordinates: { lat: 28.636, lng: 77.2167 },
+    radiusKm: 3.0,
+    severity: "low",
+    message: "Normal area with routine patrols.",
+    source: "ai",
+  },
+];
+
 // ----------------- Middleware -----------------
 const allowedOrigins = [
   "http://localhost:5173",
@@ -461,8 +491,125 @@ User location (if available): ${location?.lat || "N/A"}, ${location?.lng || "N/A
 const digitalIdRouter = createDigitalIdRouter(DigitalId);
 app.use("/api/digitalid", authMiddleware, digitalIdRouter);
 
+app.get("/api/alerts", async (req, res) => {
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  const radiusKm = Number(req.query.radiusKm || 5);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return res.status(400).json({ error: "lat and lng are required" });
+  }
+
+  const filtered = safetyAlerts
+    .map((alert) => {
+      const distanceKm = haversineKm(
+        { lat, lng },
+        { lat: alert.coordinates.lat, lng: alert.coordinates.lng }
+      );
+      return { ...alert, distanceKm };
+    })
+    .filter((alert) => alert.distanceKm <= radiusKm);
+
+  return res.json({ alerts: filtered });
+});
+
 // ----------------- Start Server -----------------
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);
   validatePlacesApiKey();
+});
+
+const extractJson = (text) => {
+  if (!text) return null;
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  try {
+    return JSON.parse(match[0]);
+  } catch (err) {
+    return null;
+  }
+};
+
+app.get("/api/area-safety", async (req, res) => {
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  const radiusKm = Number(req.query.radiusKm || 5);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return res.status(400).json({ error: "lat and lng are required" });
+  }
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "GEMINI_API_KEY missing in .env" });
+  }
+
+  const prompt = `
+You are an assistant that estimates safety alerts for a tourist area.
+You DO NOT have real-time data; provide cautious, hypothetical alerts.
+Return ONLY valid JSON with this shape:
+{
+  "alerts": [
+    {
+      "id": "string",
+      "type": "danger" | "low_network" | "info",
+      "radiusKm": number,
+      "severity": "low" | "medium" | "high",
+      "message": "string",
+      "confidence": number
+    }
+  ]
+}
+Rules:
+- Provide 1-3 alerts max
+- If no issues, return an empty alerts array
+- Keep messages short (<= 120 chars)
+
+User location: lat ${lat}, lng ${lng}, radius ${radiusKm} km
+`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    const text =
+      response.text ||
+      response.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "";
+
+    const parsed = extractJson(text);
+    const alerts = Array.isArray(parsed?.alerts) ? parsed.alerts : [];
+
+    const normalized = alerts.map((alert, index) => ({
+      id: alert.id || `ai-alert-${Date.now()}-${index}`,
+      type: ["danger", "low_network", "info"].includes(alert.type)
+        ? alert.type
+        : "info",
+      coordinates: { lat, lng },
+      radiusKm: Number(alert.radiusKm) || radiusKm,
+      severity: ["low", "medium", "high"].includes(alert.severity)
+        ? alert.severity
+        : "low",
+      message: String(alert.message || "General area info").slice(0, 120),
+      confidence: Number(alert.confidence) || 0.4,
+      source: "ai_estimate",
+    }));
+
+    return res.json({ alerts: normalized, source: "ai_estimate" });
+  } catch (err) {
+    console.error("Area safety AI error:", err);
+
+    const fallback = safetyAlerts
+      .map((alert) => {
+        const distanceKm = haversineKm(
+          { lat, lng },
+          { lat: alert.coordinates.lat, lng: alert.coordinates.lng }
+        );
+        return { ...alert, distanceKm };
+      })
+      .filter((alert) => alert.distanceKm <= radiusKm);
+
+    return res.status(200).json({ alerts: fallback, source: "fallback" });
+  }
 });
