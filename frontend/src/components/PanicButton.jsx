@@ -113,17 +113,25 @@ function PanicButton({ currentLocation }) {
 
   const handlePanic = useCallback(async (voiceQueryOrEvent) => {
     console.log("🔴 Panic button clicked or voice command detected!");
+    console.log("🔴 Voice query:", voiceQueryOrEvent);
 
     const voiceQuery = typeof voiceQueryOrEvent === "string" ? voiceQueryOrEvent : "";
     const finalQuery = String(panicQuery || voiceQuery || transcript || "").trim();
+
+    console.log("🔴 Final query:", finalQuery);
+    console.log("🔴 Current location:", currentLocation);
 
     setIsSending(true);
     setTimeout(() => setIsSending(false), 4000);
 
     const capturedPhotos = voiceQuery ? [] : await capturePanicPhotos();
+    console.log("📸 Captured photos:", capturedPhotos.length);
 
     const digitalIdData = localStorage.getItem("digitalIdData");
+    console.log("💾 Raw digitalIdData from localStorage:", digitalIdData);
+
     if (!digitalIdData) {
+      console.error("❌ No digitalIdData found in localStorage!");
       alert("⚠️ create your Digital ID to access Panic Button");
       console.warn("⚠️ No digitalIdData found, redirecting...");
       navigate("/Profile");
@@ -131,7 +139,7 @@ function PanicButton({ currentLocation }) {
     }
 
     const parsedIdData = JSON.parse(digitalIdData);
-    console.log("👤 Digital ID data:", parsedIdData);
+    console.log("👤 Parsed digital ID data:", parsedIdData);
 
     const transformedLocation = transformLocation(currentLocation);
     console.log("📍 Transformed location:", transformedLocation);
@@ -144,6 +152,8 @@ function PanicButton({ currentLocation }) {
         relation: c.relation,
       })
     );
+
+    console.log("👥 Transformed emergency contacts:", transformedContacts);
 
     const panicPayload = {
       email : localStorage.getItem("email") || "",
@@ -162,7 +172,11 @@ function PanicButton({ currentLocation }) {
     };
 
     console.log("📦 Final panicPayload:", panicPayload);
+    console.log("🔑 Checking token...");
+
     const token = localStorage.getItem("token");
+    console.log("🔑 Token exists:", !!token);
+    console.log("🔑 Token value:", token ? token.substring(0, 20) + "..." : "null");
 
     try {
       if (capturedPhotos.length > 0) {
@@ -194,9 +208,17 @@ function PanicButton({ currentLocation }) {
       }
 
       if (!token) {
+        console.error("❌ No token found in localStorage!");
         pushNotification("Please login to send panic request.", "warning");
         return;
       }
+
+      console.log("🔑 Token found, proceeding with panic request...");
+      console.log("📡 Making fetch request to:", `${API_BASE_URL}/api/digitalid/panic`);
+      console.log("📡 Request headers:", {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.substring(0, 20)}...`,
+      });
 
       const response = await fetch(`${API_BASE_URL}/api/digitalid/panic`, {
         method: "POST",
@@ -207,7 +229,11 @@ function PanicButton({ currentLocation }) {
         body: JSON.stringify(panicPayload),
       });
 
+      console.log("📡 Response status:", response.status);
+      console.log("📡 Response ok:", response.ok);
+
       const result = await response.json().catch(() => ({}));
+      console.log("📡 Response body:", result);
 
       if (response.ok) {
         console.log("🚨 Panic data sent successfully!");
@@ -365,6 +391,57 @@ function PanicButton({ currentLocation }) {
       />
 
       <div className="flex gap-4 items-center">
+        {/* Test Panic Button - Simple version for debugging */}
+        <motion.button
+          onClick={async () => {
+            console.log("🧪 Testing simple panic request...");
+            const token = localStorage.getItem("token");
+            const email = localStorage.getItem("email");
+
+            if (!token || !email) {
+              console.error("❌ Missing token or email");
+              return;
+            }
+
+            try {
+              const testPayload = {
+                email: email,
+                name: "Test User",
+                contact_number: "+919876543210",
+                panic_query: "Test panic from frontend",
+                kyc: { aadhaar: { number: null }, passport: { number: null, country: null } },
+                emergency_contacts: [],
+                locations: []
+              };
+
+              console.log("📦 Test payload:", testPayload);
+
+              const response = await fetch(`${API_BASE_URL}/api/digitalid/panic`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(testPayload),
+              });
+
+              const result = await response.json();
+              console.log("📡 Test response:", response.status, result);
+
+              if (response.ok) {
+                console.log("✅ Test panic saved successfully!");
+              } else {
+                console.error("❌ Test panic failed:", result);
+              }
+            } catch (error) {
+              console.error("❌ Test panic error:", error);
+            }
+          }}
+          className="px-6 py-3 bg-green-500 text-white font-bold rounded-xl shadow-lg hover:bg-green-600"
+        >
+          ✅ WORKING
+        </motion.button>
+
         {/* Panic Button */}
         <motion.button
           onClick={handlePanic}

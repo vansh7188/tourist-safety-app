@@ -135,6 +135,16 @@ export function createDigitalIdRouter(DigitalId) {
 
   // --- Routes (now attached to the router) ---
 
+  // 🔍 Health check endpoint
+  router.get("/health", async (req, res) => {
+    return res.status(200).json({
+      status: "ok",
+      message: "Panic API is reachable",
+      timestamp: new Date().toISOString(),
+      database: "connected",
+    });
+  });
+
   router.post("/digital-id", async (req, res) => {
     try {
       const newId = new DigitalId(req.body);
@@ -263,6 +273,9 @@ router.post("/panic-photos", async (req, res) => {
 
 router.post("/panic", async (req, res) => {
   try {
+    console.log("🚨 [PANIC ENDPOINT] Received panic request from:", req.user?.email || req.body.email);
+    console.log("🚨 [PANIC ENDPOINT] Request body:", JSON.stringify(req.body, null, 2));
+    
     const panicData = { ...req.body, email: req.user?.email || req.body.email };
     delete panicData.panic_photos;
 
@@ -292,8 +305,10 @@ router.post("/panic", async (req, res) => {
       (locationSummary ? `\nLocation: ${locationSummary}` : "");
 
     // Create new panic record
+    console.log("🚨 [PANIC ENDPOINT] Saving panic record to MongoDB...");
     const newPanic = new Panic(panicData);
-    await newPanic.save();
+    const savedPanic = await newPanic.save();
+    console.log("✅ [PANIC ENDPOINT] Panic record saved with ID:", savedPanic._id);
 
     console.log("Twilio configured:", Boolean(twilioClient));
     console.log("TWILIO_FROM_NUMBER:", twilioFrom || "(missing)");
@@ -413,6 +428,40 @@ router.post("/panic", async (req, res) => {
   } catch (error) {
     console.error("Error saving panic data:", error);
     return res.status(500).json({ message: "Failed to process panic", error });
+  }
+});
+
+// 🔍 Get all panic requests (for debugging/admin)
+router.get("/panic", async (req, res) => {
+  try {
+    console.log("📊 Fetching all panic requests...");
+    const allPanics = await Panic.find().sort({ createdAt: -1 }).limit(50);
+    console.log(`✅ Found ${allPanics.length} panic records`);
+    return res.status(200).json({
+      count: allPanics.length,
+      data: allPanics,
+    });
+  } catch (error) {
+    console.error("Error fetching panic data:", error);
+    return res.status(500).json({ message: "Failed to fetch panic data", error });
+  }
+});
+
+// 🔍 Get panic requests by email
+router.get("/panic/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+    console.log("📊 Fetching panic requests for email:", email);
+    const userPanics = await Panic.find({ email }).sort({ createdAt: -1 });
+    console.log(`✅ Found ${userPanics.length} panic records for ${email}`);
+    return res.status(200).json({
+      email,
+      count: userPanics.length,
+      data: userPanics,
+    });
+  } catch (error) {
+    console.error("Error fetching panic data by email:", error);
+    return res.status(500).json({ message: "Failed to fetch panic data", error });
   }
 });
 

@@ -327,7 +327,8 @@ const User = mongoose.model("User", userSchema);
 
 // ----------------- Auth Middleware -----------------
 const authMiddleware = (req, res, next) => {
-  if (req.baseUrl === "/api/digitalid" && req.path === "/panic-photos") {
+  // Allow panic-related endpoints and health check with or without auth (for emergency situations)
+  if (req.baseUrl === "/api/digitalid" && (req.path === "/panic-photos" || req.path === "/panic" || req.path === "/health")) {
     return next();
   }
 
