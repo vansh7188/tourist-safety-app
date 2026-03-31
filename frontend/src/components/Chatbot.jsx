@@ -98,16 +98,21 @@ function Chatbot() {
   };
 
   return (
-    <div className="w-full section-card p-6">
-      <h2 className="section-title font-bold mb-4 text-lg">
+    <div className="w-full section-card p-5 lg:-mt-1 border border-sky-100">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="section-title font-bold text-lg">
         🤖 AI Safety Chatbot
-      </h2>
+        </h2>
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
+          Live AI
+        </span>
+      </div>
 
       {locationError && (
         <div className="mb-3 text-sm text-red-600">{locationError}</div>
       )}
 
-      <div className="h-[350px] overflow-y-auto border border-white/60 rounded-xl p-4 mb-4 bg-white/70">
+      <div className="h-[390px] overflow-y-auto border border-slate-200 rounded-2xl p-4 mb-4 bg-white/80">
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -119,7 +124,7 @@ function Chatbot() {
               className={`px-4 py-3 rounded-2xl max-w-[80%] whitespace-pre-wrap leading-relaxed ${
                 msg.sender === "user"
                   ? "bg-emerald-100 text-slate-900"
-                  : "bg-amber-50 text-slate-900"
+                  : "bg-sky-50 text-slate-900"
               }`}
             >
               {msg.text}
@@ -183,7 +188,7 @@ function Chatbot() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-1 px-4 py-3 border border-white/60 rounded-xl outline-none focus:ring-2 focus:ring-emerald-200"
+          className="flex-1 px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-200"
         />
         <button
           onClick={sendMessage}

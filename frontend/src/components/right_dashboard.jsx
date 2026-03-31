@@ -124,27 +124,27 @@ function TripPlanner() {
 
   return (
     <motion.div
-      className="flex-1 max-w-3xl mx-auto section-card p-6"
+      className="flex-1 max-w-3xl mx-auto section-card p-5 md:p-6"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, type: "spring", stiffness: 120 }}
     >
-      <h2 className="section-title font-bold mb-3 text-lg flex items-center">
-        🧳 Trip Planner
+      <h2 className="section-title font-bold mb-2 text-xl flex items-center gap-2">
+        <span>🧳</span>
+        <span>Plan Your Trip</span>
       </h2>
 
       {/* Show Form or Trip Planner UI */}
       {!showForm && plannedLocations.length === 0 ? (
         <>
-          <p className="text-sm text-slate-600 mb-6">
-            Organize your travel itinerary, add destinations, and plan safe
-            routes.
+          <p className="text-sm text-slate-600 mb-5">
+            Build a safer route with destination planning and map-linked waypoints.
           </p>
 
-          <motion.div whileHover={{ scale: 1.05 }} className="flex justify-center">
+          <motion.div whileHover={{ scale: 1.03 }} className="flex justify-center">
             <button
               onClick={() => setShowForm(true)}
-              className="px-6 py-2 btn-accent hover:brightness-110 transition"
+              className="px-6 py-2.5 btn-accent hover:brightness-110 transition font-semibold"
             >
               Plan Your Trip
             </button>
@@ -163,12 +163,12 @@ function TripPlanner() {
                 value={loc.name}
                 onChange={(e) => handleChange(index, e.target.value)}
                 placeholder={`Location ${index + 1}`}
-                className="w-full px-3 py-2 border rounded-lg shadow-sm focus:ring focus:ring-emerald-200 outline-none"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl shadow-sm focus:ring focus:ring-emerald-200 outline-none"
                 required
               />
               {/* Suggestions Dropdown */}
               {loc.suggestions.length > 0 && (
-                <ul className="absolute z-10 bg-white border rounded-lg shadow-md w-full mt-1 max-h-40 overflow-y-auto">
+                <ul className="absolute z-10 bg-white border border-slate-200 rounded-xl shadow-md w-full mt-1 max-h-40 overflow-y-auto">
                   {loc.suggestions.map((sug, i) => (
                     <li
                       key={i}
@@ -187,20 +187,20 @@ function TripPlanner() {
             <button
               type="button"
               onClick={handleAddLocation}
-              className="px-4 py-2 btn-primary hover:brightness-110 transition"
+              className="px-4 py-2 btn-primary hover:brightness-110 transition font-semibold"
             >
               + Add Location
             </button>
             <button
               type="submit"
-              className="px-6 py-2 btn-accent hover:brightness-110 transition"
+              className="px-6 py-2 btn-accent hover:brightness-110 transition font-semibold"
             >
               Save Trip
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 btn-muted hover:brightness-110 transition"
+              className="px-4 py-2 btn-muted hover:brightness-110 transition font-semibold"
             >
               Cancel
             </button>
@@ -210,7 +210,7 @@ function TripPlanner() {
         <>
           {/* Google Map */}
           {mapMarkers.length > 0 && (
-            <div className="w-full h-150 rounded-lg overflow-hidden shadow-md border mt-4">
+            <div className="w-full h-96 rounded-2xl overflow-hidden shadow-md border border-slate-200 mt-4">
               <GoogleMap
                 center={mapMarkers[0]}
                 zoom={5}
@@ -239,7 +239,7 @@ function TripPlanner() {
           )}
 
           {/* Trip Plan List */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg shadow border text-sm">
+          <div className="mt-6 p-4 bg-blue-50/70 rounded-2xl shadow border border-blue-100 text-sm">
             <h3 className="font-bold text-blue-700 mb-2">📝 Your Trip Plan</h3>
             <ol className="list-decimal pl-5 space-y-1">
               {plannedLocations.map((loc, i) => (
@@ -249,14 +249,14 @@ function TripPlanner() {
           </div>
 
           {/* Plan Another Trip + Clear Trip Buttons */}
-          <div className="flex justify-center gap-3 mt-6">
+          <div className="flex justify-center gap-3 mt-6 flex-wrap">
             <motion.div whileHover={{ scale: 1.05 }}>
               <button
                 onClick={() => {
                   setPlannedLocations([]);
                   setShowForm(true);
                 }}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition"
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-xl shadow-md hover:bg-blue-700 transition font-semibold"
               >
                 Plan Another Trip
               </button>
@@ -265,7 +265,7 @@ function TripPlanner() {
             <motion.div whileHover={{ scale: 1.05 }}>
               <button
                 onClick={clearTrip}
-                className="px-6 py-2 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition"
+                className="px-6 py-2.5 bg-red-600 text-white rounded-xl shadow-md hover:bg-red-700 transition font-semibold"
               >
                 Cancel Trip
               </button>
