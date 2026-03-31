@@ -8,6 +8,7 @@ import LeftPanel from "../components/left_dashboard";
 import TripPlanner from "../components/right_dashboard";
 import Chatbot from "../components/Chatbot";
 import SafetyAlertIndicator from "../components/SafetyAlertIndicator";
+import SmartSafetyAlerts from "../components/SmartSafetyAlerts";
 import { SafetyAlertsProvider } from "../context/SafetyAlertsContext";
 
 const libraries = ["places"];
@@ -71,6 +72,10 @@ function Dashboard() {
             <div className="text-2xl md:text-3xl font-extrabold tracking-wide drop-shadow">
               Smart Tourist Safety
             </div>
+            <div className="mt-2 flex items-center gap-2 text-white/90">
+              <span className="soft-chip">Live Monitoring</span>
+              <span className="soft-chip">AI Assisted</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -102,18 +107,21 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="flex flex-1 px-6 py-8 pb-28 md:pb-8">
-          <div className="w-full grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-6">
+        <div className="flex flex-1 px-4 md:px-6 py-6 md:py-8 pb-28 md:pb-8">
+          <div className="dashboard-grid w-full grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
             <LeftPanel
               setStartLocation={setStartLocation}
               setCurrentLocation={setCurrentLocation}
               currentLocation={currentLocation}
             />
 
-            <div className="flex flex-col gap-6">
-              <TripPlanner tripPlan={tripPlan} setTripPlan={setTripPlan} />
+            <div className="dashboard-right xl:sticky xl:top-24 xl:h-[calc(100vh-8rem)]">
+              <SmartSafetyAlerts />
               <div className="hidden lg:block">
                 <Chatbot />
+              </div>
+              <div className="trip-bottom">
+                <TripPlanner tripPlan={tripPlan} setTripPlan={setTripPlan} />
               </div>
             </div>
           </div>
