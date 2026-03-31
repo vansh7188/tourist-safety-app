@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 function ProfileForm() {
@@ -12,6 +12,9 @@ function ProfileForm() {
     gender: "",
     age: "",
   });
+  const [panicPhotos, setPanicPhotos] = useState([]);
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoError, setPhotoError] = useState(null);
 
   const [emailOTP, setEmailOTP] = useState("");
   const [contactOTP, setContactOTP] = useState("");
@@ -77,6 +80,44 @@ function ProfileForm() {
       console.log(err);
     }
   };
+
+  const fetchPanicPhotos = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setPhotoError("Login required to load panic photos");
+      return;
+    }
+
+    setPhotoLoading(true);
+    setPhotoError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/digitalid/panic-photos`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`fetch failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setPanicPhotos(data.data || []);
+    } catch (err) {
+      console.error("Error fetching panic photos:", err);
+      setPhotoError(err.message || "Failed to fetch panic photos");
+    } finally {
+      setPhotoLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // If profile is logged in, auto load your panic photos
+    fetchPanicPhotos();
+  }, []);
 
   return (
     <div className="min-h-screen flex justify-center items-center px-6 py-10 app-shell">
@@ -205,6 +246,36 @@ function ProfileForm() {
         >
           🚀 Save Profile
         </button>
+
+        {/* My Panic Photos Summary */}
+        <div className="mt-8 bg-white rounded-2xl shadow p-5 border">
+          <h3 className="text-lg font-bold mb-3">My Panic Photos</h3>
+
+          {photoLoading && (
+            <p className="text-sm text-gray-500">Loading panic photos...</p>
+          )}
+
+          {photoError && (
+            <p className="text-sm text-red-600">{photoError}</p>
+          )}
+
+          {!photoLoading && !photoError && panicPhotos.length === 0 && (
+            <p className="text-sm text-gray-500">No panic photos found (either not captured yet or try panic route).</p>
+          )}
+
+          {!photoLoading && panicPhotos.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {panicPhotos.slice(0, 6).map((record) => (
+                <div key={record._id} className="border rounded-lg p-2">
+                  <p className="text-xs text-gray-500 mb-1">{record.email} · {new Date(record.createdAt).toLocaleString()}</p>
+                  {record.photo_urls?.map((url, idx) => (
+                    <img key={idx} src={url} alt={`panic-photo-${idx}`} className="w-full h-24 object-cover rounded-md mb-1" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

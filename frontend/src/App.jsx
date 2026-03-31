@@ -12,6 +12,10 @@ import { TravelProvider } from "./context/TravelContext";
 import Chatbot from "./components/Chatbot";
 
 import AdminPanel from "./pages/AdminPanel";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminPanicDetails from "./pages/AdminPanicDetails";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 
 function App() {
   const { isLoaded } = useJsApiLoader({
@@ -31,6 +35,25 @@ function App() {
           <Route path="digitalid/edit" element={<DigitalidForm />} />
           <Route path="chatbot" element={<Chatbot />} />
           <Route path="admin" element={<AdminPanel />} />
+          
+          {/* Admin Routes */}
+          <Route path="admin/login" element={<AdminLogin />} />
+          <Route 
+            path="admin/dashboard" 
+            element={
+              <ProtectedAdminRoute>
+                <AdminDashboard />
+              </ProtectedAdminRoute>
+            } 
+          />
+          <Route 
+            path="admin/panics/:id" 
+            element={
+              <ProtectedAdminRoute>
+                <AdminPanicDetails />
+              </ProtectedAdminRoute>
+            } 
+          />
         </Routes>
       </Router>
     </TravelProvider>

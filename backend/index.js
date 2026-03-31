@@ -15,6 +15,8 @@ import {
   createDigitalIdRouter,
   digitalIdSchema,
 } from "./DigitalidForm.js";
+import { createAdminRouter } from "./adminRoutes.js";
+import Admin from "./models/Admin.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -623,6 +625,10 @@ Assistant reply: ${reply}
 // ----------------- Digital ID Route (Protected) -----------------
 const digitalIdRouter = createDigitalIdRouter(DigitalId);
 app.use("/api/digitalid", authMiddleware, digitalIdRouter);
+
+// ----------------- Admin Routes -----------------
+const adminRouter = createAdminRouter();
+app.use("/api/admin", adminRouter);
 
 app.get("/api/alerts", async (req, res) => {
   const lat = Number(req.query.lat);

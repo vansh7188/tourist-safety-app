@@ -43,7 +43,28 @@ const PanicSchema = new mongoose.Schema({
     }
   ],
   panic_query: { type: String },
-  locations: [LocationSchema] // ✅ use subschema
+  locations: [LocationSchema], // ✅ use subschema
+  status: {
+    type: String,
+    enum: ["pending", "in_progress", "resolved"],
+    default: "pending"
+  },
+  priority: {
+    type: String,
+    enum: ["low", "medium", "high", "critical"],
+    default: "high"
+  },
+  notes: {
+    type: String,
+    default: ""
+  },
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin"
+  },
+  resolvedAt: {
+    type: Date
+  }
 }, { timestamps: true });
 
 export default mongoose.model("Panic", PanicSchema);
