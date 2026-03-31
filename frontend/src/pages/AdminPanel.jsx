@@ -3,6 +3,7 @@ import AdminSidebar from "../components/AdminSidebar";
 
 export default function AdminPanel() {
   const [panicRequests, setPanicRequests] = useState([]);
+  const [panicPhotos, setPanicPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -10,6 +11,7 @@ export default function AdminPanel() {
 
   useEffect(() => {
     fetchPanicRequests();
+    fetchPanicPhotos();
   }, []);
 
   const fetchPanicRequests = async () => {
@@ -44,6 +46,28 @@ export default function AdminPanel() {
     return new Date(dateString).toLocaleString();
   };
 
+  const fetchPanicPhotos = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/api/digitalid/panic-photos`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch panic photos: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setPanicPhotos(data.data || []);
+    } catch (err) {
+      console.error("Error fetching panic photos:", err);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
@@ -51,7 +75,10 @@ export default function AdminPanel() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <button
-            onClick={fetchPanicRequests}
+            onClick={() => {
+              fetchPanicRequests();
+              fetchPanicPhotos();
+            }}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Refresh Data
@@ -127,6 +154,26 @@ export default function AdminPanel() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="font-semibold mb-4">Recent Panic Photos</h2>
+          {panicPhotos.length === 0 ? (
+            <p className="text-gray-500">No panic photos found.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {panicPhotos.slice(0, 9).map((record) => (
+                <div key={record._id} className="border rounded-lg p-2">
+                  <p className="text-xs text-gray-500 mb-1">{record.email} • {new Date(record.createdAt).toLocaleString()}</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {record.photo_urls?.map((url, i) => (
+                      <img key={i} src={url} alt={`panic-${i}`} className="w-full h-28 object-cover rounded" />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

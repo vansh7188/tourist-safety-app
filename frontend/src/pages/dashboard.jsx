@@ -75,6 +75,12 @@ function Dashboard() {
 
           <div className="flex items-center gap-4">
             <SafetyAlertIndicator />
+            <button
+              onClick={() => navigate("/admin/dashboard")}
+              className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition"
+            >
+              Admin Dashboard
+            </button>
             <motion.div
               whileHover={{ scale: 1.1 }}
               className="flex flex-col items-center cursor-pointer"

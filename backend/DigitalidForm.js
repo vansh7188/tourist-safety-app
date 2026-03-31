@@ -271,6 +271,22 @@ router.post("/panic-photos", async (req, res) => {
   }
 });
 
+// 🔍 Get panic photos (optionally by email)
+router.get("/panic-photos", async (req, res) => {
+  try {
+    const email = req.query.email || req.user?.email;
+    const filter = email ? { email } : {};
+    const photos = await PanicMedia.find(filter).sort({ createdAt: -1 }).limit(100);
+    return res.status(200).json({
+      count: photos.length,
+      data: photos,
+    });
+  } catch (error) {
+    console.error("Error fetching panic photos:", error);
+    return res.status(500).json({ message: "Failed to fetch photos", error });
+  }
+});
+
 router.post("/panic", async (req, res) => {
   try {
     console.log("🚨 [PANIC ENDPOINT] Received panic request from:", req.user?.email || req.body.email);
