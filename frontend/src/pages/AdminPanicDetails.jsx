@@ -67,9 +67,11 @@ export default function PanicDetails() {
         notes: data.data.notes || "",
       });
 
-      // Fetch media for this panic
-      if (data.data.email) {
-        fetchPanicMedia(data.data.email);
+      // Fetch media only for this panic request
+      if (data.data.panic_request_id) {
+        fetchPanicMedia(data.data.panic_request_id);
+      } else {
+        setMedia([]);
       }
     } catch (err) {
       setError(err.message);
@@ -78,11 +80,13 @@ export default function PanicDetails() {
     }
   };
 
-  const fetchPanicMedia = async (email) => {
+  const fetchPanicMedia = async (panicRequestId) => {
     try {
       setMediaLoading(true);
       const response = await fetch(
-        `${API_BASE_URL}/api/digitalid/panic-photos?email=${encodeURIComponent(email)}`
+        `${API_BASE_URL}/api/digitalid/panic-photos?panic_request_id=${encodeURIComponent(
+          panicRequestId
+        )}`
       );
 
       if (!response.ok) {

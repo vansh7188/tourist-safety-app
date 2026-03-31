@@ -4,6 +4,7 @@ import {
   FaSearch,
   FaFilter,
   FaEye,
+  FaTrash,
   FaCheckCircle,
   FaClipboardList,
   FaSignOutAlt,
@@ -24,6 +25,7 @@ export default function AdminDashboard() {
   const [filteredPanics, setFilteredPanics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
   const [adminInfo, setAdminInfo] = useState(null);
   const [stats, setStats] = useState(null);
 
@@ -171,6 +173,38 @@ export default function AdminDashboard() {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminInfo");
     navigate("/admin/login");
+  };
+
+  const handleDeletePanic = async (panicId) => {
+    const confirmed = window.confirm(
+      "Delete this resolved panic request? This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(panicId);
+      const response = await fetch(`${API_BASE_URL}/api/admin/panics/${panicId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete panic request");
+      }
+
+      setPanics((prev) => prev.filter((p) => p._id !== panicId));
+      setFilteredPanics((prev) => prev.filter((p) => p._id !== panicId));
+      fetchStats();
+    } catch (err) {
+      setError(err.message || "Failed to delete panic request");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Format date
@@ -491,13 +525,25 @@ export default function AdminDashboard() {
                           {formatDate(panic.createdAt)}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => navigate(`/admin/panics/${panic._id}`)}
-                            className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
-                          >
-                            <FaEye className="w-4 h-4" />
-                            View
-                          </button>
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              onClick={() => navigate(`/admin/panics/${panic._id}`)}
+                              className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
+                            >
+                              <FaEye className="w-4 h-4" />
+                              View
+                            </button>
+                            {panic.status === "resolved" && (
+                              <button
+                                onClick={() => handleDeletePanic(panic._id)}
+                                disabled={deletingId === panic._id}
+                                className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                              >
+                                <FaTrash className="w-4 h-4" />
+                                {deletingId === panic._id ? "Deleting..." : "Delete"}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -13,6 +13,14 @@ function PanicButton({ currentLocation }) {
   const [notifications, setNotifications] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [panicQuery, setPanicQuery] = useState("");
+  const [lastPanicRequest, setLastPanicRequest] = useState(() => {
+    try {
+      const raw = localStorage.getItem("lastPanicRequest");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
@@ -153,9 +161,15 @@ function PanicButton({ currentLocation }) {
       })
     );
 
+    const panicRequestId =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
     console.log("👥 Transformed emergency contacts:", transformedContacts);
 
     const panicPayload = {
+      panic_request_id: panicRequestId,
       email : localStorage.getItem("email") || "",
       name: parsedIdData.name,
       contact_number: parsedIdData.contactInfo,
@@ -188,6 +202,7 @@ function PanicButton({ currentLocation }) {
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             body: JSON.stringify({
+              panic_request_id: panicRequestId,
               email: panicPayload.email,
               contact_number: panicPayload.contact_number,
               panic_photos: capturedPhotos,
@@ -239,6 +254,24 @@ function PanicButton({ currentLocation }) {
         console.log("🚨 Panic data sent successfully!");
         pushNotification("Panic request sent.", "success");
         setPanicQuery("");
+
+        const savedPanic = result?.data;
+        if (savedPanic?.panic_request_id) {
+          const locationText = (savedPanic.locations || [])
+            .map((loc) => loc.detailed_address || [loc.city, loc.state].filter(Boolean).join(", "))
+            .filter(Boolean)
+            .join("; ");
+
+          const panicMeta = {
+            panicRequestId: savedPanic.panic_request_id,
+            panicQuery: savedPanic.panic_query || "",
+            createdAt: savedPanic.createdAt || new Date().toISOString(),
+            location: locationText,
+          };
+
+          setLastPanicRequest(panicMeta);
+          localStorage.setItem("lastPanicRequest", JSON.stringify(panicMeta));
+        }
 
         const smsStatus = result?.smsStatus;
         if (smsStatus === "sent") {
@@ -345,6 +378,90 @@ function PanicButton({ currentLocation }) {
     } else {
       setTranscript("");
       recognitionRef.current.start();
+    }
+  };
+
+  const handleShareLastPanic = async () => {
+    if (!lastPanicRequest) {
+      pushNotification("No panic request available to share.", "warning");
+      return;
+    }
+
+    const message = [
+      "PANIC ALERT DETAILS",
+      `Request ID: ${lastPanicRequest.panicRequestId}`,
+      `Created: ${new Date(lastPanicRequest.createdAt).toLocaleString()}`,
+      lastPanicRequest.panicQuery ? `Issue: ${lastPanicRequest.panicQuery}` : null,
+      lastPanicRequest.location ? `Location: ${lastPanicRequest.location}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Panic Request",
+          text: message,
+        });
+        pushNotification("Panic details shared.", "success");
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message);
+        pushNotification("Panic details copied to clipboard.", "success");
+        return;
+      }
+
+      pushNotification("Share is not supported on this browser.", "warning");
+    } catch (error) {
+      console.error("Share panic error:", error);
+      pushNotification("Failed to share panic details.", "error");
+    }
+  };
+
+  const handleDeleteLastPanic = async () => {
+    if (!lastPanicRequest?.panicRequestId) {
+      pushNotification("No panic request available to delete.", "warning");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Delete your last panic request? This will also remove linked panic photos."
+    );
+
+    if (!confirmed) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      pushNotification("Please login to delete panic request.", "warning");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/digitalid/panic/${encodeURIComponent(lastPanicRequest.panicRequestId)}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        pushNotification(result.error || "Failed to delete panic request.", "error");
+        return;
+      }
+
+      localStorage.removeItem("lastPanicRequest");
+      setLastPanicRequest(null);
+      pushNotification("Panic request deleted.", "success");
+    } catch (error) {
+      console.error("Delete panic error:", error);
+      pushNotification("Error deleting panic request.", "error");
     }
   };
 
@@ -489,6 +606,32 @@ function PanicButton({ currentLocation }) {
         >
           Heard: "{transcript}"
         </motion.div>
+      )}
+
+      {lastPanicRequest && (
+        <div className="w-full max-w-xl rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <p className="text-sm font-semibold text-gray-800">Last Panic Request</p>
+          <p className="mt-1 text-xs text-gray-600">
+            ID: {lastPanicRequest.panicRequestId}
+          </p>
+          <p className="text-xs text-gray-600">
+            Created: {new Date(lastPanicRequest.createdAt).toLocaleString()}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <button
+              onClick={handleShareLastPanic}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700"
+            >
+              Share Panic
+            </button>
+            <button
+              onClick={handleDeleteLastPanic}
+              className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700"
+            >
+              Delete Panic Request
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

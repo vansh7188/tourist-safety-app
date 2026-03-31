@@ -23,6 +23,7 @@ const LocationSchema = new mongoose.Schema({
 
 const PanicSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "DigitalId" },
+  panic_request_id: { type: String, index: true },
   email: { type: String, required: true },
   name: { type: String, required: true },
   contact_number: { type: String, required: true },

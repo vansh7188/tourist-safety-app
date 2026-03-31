@@ -2,6 +2,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import Admin from "./models/Admin.js";
 import Panic from "./models/panic.js";
+import PanicMedia from "./models/panicMedia.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
@@ -252,6 +253,45 @@ export function createAdminRouter() {
     } catch (error) {
       console.error("Error updating panic:", error);
       res.status(500).json({ error: "Failed to update panic" });
+    }
+  });
+
+  // 🗑️ Delete Panic Request (recommended after resolving)
+  router.delete("/panics/:id", verifyAdminToken, async (req, res) => {
+    try {
+      if (!req.admin.permissions.canUpdateStatus) {
+        return res.status(403).json({ error: "No permission to delete panic" });
+      }
+
+      const panic = await Panic.findById(req.params.id);
+
+      if (!panic) {
+        return res.status(404).json({ error: "Panic request not found" });
+      }
+
+      if (panic.status !== "resolved") {
+        return res.status(400).json({
+          error: "Only resolved panic requests can be deleted",
+        });
+      }
+
+      await Panic.findByIdAndDelete(req.params.id);
+
+      let deletedMediaCount = 0;
+      if (panic.panic_request_id) {
+        const mediaDeleteResult = await PanicMedia.deleteMany({
+          panic_request_id: panic.panic_request_id,
+        });
+        deletedMediaCount = mediaDeleteResult.deletedCount || 0;
+      }
+
+      res.json({
+        message: "Panic request deleted successfully",
+        deletedMediaCount,
+      });
+    } catch (error) {
+      console.error("Error deleting panic:", error);
+      res.status(500).json({ error: "Failed to delete panic" });
     }
   });
 

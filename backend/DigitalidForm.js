@@ -215,12 +215,15 @@ router.post("/panic-photos", async (req, res) => {
   try {
     const email = req.user?.email || req.body.email;
     const contactNumber = req.body.contact_number || req.body.contactNumber;
+    const panicRequestId = req.body.panic_request_id || req.body.panicRequestId;
     const incomingPhotos = Array.isArray(req.body.panic_photos)
       ? req.body.panic_photos.filter(Boolean).slice(0, 3)
       : [];
 
-    if (!email || !contactNumber) {
-      return res.status(400).json({ error: "Email and contact number are required" });
+    if (!email || !contactNumber || !panicRequestId) {
+      return res.status(400).json({
+        error: "Email, contact number, and panic_request_id are required",
+      });
     }
 
     if (!cloudinaryConfigured) {
@@ -253,6 +256,7 @@ router.post("/panic-photos", async (req, res) => {
     }
 
     const mediaRecord = new PanicMedia({
+      panic_request_id: panicRequestId,
       email,
       contact_number: contactNumber,
       photo_urls: photoUrls,
@@ -271,11 +275,17 @@ router.post("/panic-photos", async (req, res) => {
   }
 });
 
-// 🔍 Get panic photos (optionally by email)
+// 🔍 Get panic photos (by panic_request_id, optionally by email)
 router.get("/panic-photos", async (req, res) => {
   try {
+    const panicRequestId = req.query.panic_request_id || req.query.panicRequestId;
     const email = req.query.email || req.user?.email;
-    const filter = email ? { email } : {};
+    const filter = {};
+    if (panicRequestId) {
+      filter.panic_request_id = panicRequestId;
+    } else if (email) {
+      filter.email = email;
+    }
     const photos = await PanicMedia.find(filter).sort({ createdAt: -1 }).limit(100);
     return res.status(200).json({
       count: photos.length,
@@ -478,6 +488,45 @@ router.get("/panic/:email", async (req, res) => {
   } catch (error) {
     console.error("Error fetching panic data by email:", error);
     return res.status(500).json({ message: "Failed to fetch panic data", error });
+  }
+});
+
+// Delete a specific panic request for the logged-in user
+router.delete("/panic/:panicRequestId", async (req, res) => {
+  try {
+    const { panicRequestId } = req.params;
+    const requesterEmail = req.user?.email;
+
+    if (!requesterEmail) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (!panicRequestId) {
+      return res.status(400).json({ error: "panicRequestId is required" });
+    }
+
+    const deletedPanic = await Panic.findOneAndDelete({
+      panic_request_id: panicRequestId,
+      email: requesterEmail,
+    });
+
+    if (!deletedPanic) {
+      return res.status(404).json({ error: "Panic request not found" });
+    }
+
+    const mediaDeleteResult = await PanicMedia.deleteMany({
+      panic_request_id: panicRequestId,
+      email: requesterEmail,
+    });
+
+    return res.status(200).json({
+      message: "Panic request deleted successfully",
+      deletedPanicId: deletedPanic._id,
+      deletedMediaCount: mediaDeleteResult.deletedCount || 0,
+    });
+  } catch (error) {
+    console.error("Error deleting panic request:", error);
+    return res.status(500).json({ message: "Failed to delete panic request", error });
   }
 });
 
