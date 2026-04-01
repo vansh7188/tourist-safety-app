@@ -14,6 +14,8 @@ import {
   FaExclamation,
   FaInfoCircle,
   FaLongArrowAltRight,
+  FaCloudUploadAlt,
+  FaWifi,
 } from "react-icons/fa";
 
 export default function AdminDashboard() {
@@ -33,6 +35,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
+  const [deliverySourceFilter, setDeliverySourceFilter] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
 
@@ -62,6 +65,7 @@ export default function AdminDashboard() {
         search: searchTerm,
         ...(statusFilter && { status: statusFilter }),
         ...(priorityFilter && { priority: priorityFilter }),
+        ...(deliverySourceFilter && { deliverySource: deliverySourceFilter }),
         sortBy,
         order: sortOrder === "asc" ? "asc" : "desc",
         page: currentPage,
@@ -142,6 +146,12 @@ export default function AdminDashboard() {
       filtered = filtered.filter((panic) => panic.priority === priorityFilter);
     }
 
+    if (deliverySourceFilter) {
+      filtered = filtered.filter(
+        (panic) => (panic.delivery_source || "direct") === deliverySourceFilter
+      );
+    }
+
     // Sort
     filtered.sort((a, b) => {
       let aVal = a[sortBy];
@@ -162,6 +172,14 @@ export default function AdminDashboard() {
     setFilteredPanics(filtered);
     setCurrentPage(1);
   };
+
+  useEffect(() => {
+    if (panics.length > 0) {
+      applyFilters(panics);
+    } else {
+      setFilteredPanics([]);
+    }
+  }, [panics, searchTerm, statusFilter, priorityFilter, deliverySourceFilter, sortBy, sortOrder]);
 
   // Handle search
   const handleSearch = (term) => {
@@ -353,7 +371,7 @@ export default function AdminDashboard() {
 
         {/* Search and Filters */}
         <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {/* Search */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -403,6 +421,21 @@ export default function AdminDashboard() {
                 <option value="high">High</option>
                 <option value="medium">Medium</option>
                 <option value="low">Low</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Delivery
+              </label>
+              <select
+                value={deliverySourceFilter}
+                onChange={(e) => setDeliverySourceFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Delivery Types</option>
+                <option value="direct">Direct (Online)</option>
+                <option value="offline_queue">Offline Queue</option>
               </select>
             </div>
           </div>
@@ -467,6 +500,9 @@ export default function AdminDashboard() {
                         Issue
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                        Delivery
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                         Priority
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
@@ -501,6 +537,19 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">
                           {panic.panic_query || "-"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {(panic.delivery_source || "direct") === "offline_queue" ? (
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                              <FaCloudUploadAlt className="w-3 h-3" />
+                              Offline Queue
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              <FaWifi className="w-3 h-3" />
+                              Direct
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <span
