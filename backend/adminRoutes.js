@@ -144,6 +144,7 @@ export function createAdminRouter() {
         search,
         status,
         priority,
+        deliverySource,
         sortBy = "createdAt",
         order = "desc",
         page = 1,
@@ -170,6 +171,11 @@ export function createAdminRouter() {
       // Priority filter
       if (priority) {
         filter.priority = priority;
+      }
+
+      // Delivery source filter
+      if (deliverySource) {
+        filter.delivery_source = deliverySource;
       }
 
       const skip = (page - 1) * limit;

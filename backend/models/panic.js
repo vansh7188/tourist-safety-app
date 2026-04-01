@@ -44,6 +44,23 @@ const PanicSchema = new mongoose.Schema({
     }
   ],
   panic_query: { type: String },
+  delivery_source: {
+    type: String,
+    enum: ["direct", "offline_queue"],
+    default: "direct"
+  },
+  client_triggered_at: {
+    type: Date,
+    default: null
+  },
+  queued_at: {
+    type: Date,
+    default: null
+  },
+  synced_at: {
+    type: Date,
+    default: null
+  },
   locations: [LocationSchema], // ✅ use subschema
   status: {
     type: String,
