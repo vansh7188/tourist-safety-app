@@ -11,15 +11,12 @@ import DigitalidForm from "./components/DigitalidForm";
 import { TravelProvider } from "./context/TravelContext";
 import Chatbot from "./components/Chatbot";
 
-<<<<<<< HEAD
-=======
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminPanicDetails from "./pages/AdminPanicDetails";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 
->>>>>>> 8e5affa1f50b6f89b683c5e8e323f2d4481ee292
 function App() {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
@@ -37,29 +34,27 @@ function App() {
           <Route path="digitalidform" element={<DigitalidForm />} />
           <Route path="digitalid/edit" element={<DigitalidForm />} />
           <Route path="chatbot" element={<Chatbot />} />
-<<<<<<< HEAD
-=======
+
           <Route path="admin" element={<AdminPanel />} />
-          
+
           {/* Admin Routes */}
           <Route path="admin/login" element={<AdminLogin />} />
-          <Route 
-            path="admin/dashboard" 
+          <Route
+            path="admin/dashboard"
             element={
               <ProtectedAdminRoute>
                 <AdminDashboard />
               </ProtectedAdminRoute>
-            } 
+            }
           />
-          <Route 
-            path="admin/panics/:id" 
+          <Route
+            path="admin/panics/:id"
             element={
               <ProtectedAdminRoute>
                 <AdminPanicDetails />
               </ProtectedAdminRoute>
-            } 
+            }
           />
->>>>>>> 8e5affa1f50b6f89b683c5e8e323f2d4481ee292
         </Routes>
       </Router>
     </TravelProvider>
@@ -67,4 +62,3 @@ function App() {
 }
 
 export default App;
-
