@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/dashboard";
 import Pfile from "./pages/Pfile";
+import AreaAnalysis from "./pages/AreaAnalysis";
 import DigitalidForm from "./components/DigitalidForm";
 import { TravelProvider } from "./context/TravelContext";
 import Chatbot from "./components/Chatbot";
@@ -30,6 +31,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="dashboard" element={<Dashboard isLoaded={isLoaded} />} />
+          <Route path="analysis" element={<AreaAnalysis />} />
           <Route path="profile" element={<Pfile />} />
           <Route path="digitalidform" element={<DigitalidForm />} />
           <Route path="digitalid/edit" element={<DigitalidForm />} />

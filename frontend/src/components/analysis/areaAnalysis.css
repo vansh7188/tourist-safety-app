@@ -1,0 +1,103 @@
+.analysis-page {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: clip;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(45, 212, 191, 0.16), transparent 32%),
+    radial-gradient(circle at 82% 16%, rgba(251, 191, 36, 0.2), transparent 34%),
+    radial-gradient(circle at 40% 90%, rgba(56, 189, 248, 0.14), transparent 34%),
+    linear-gradient(145deg, #081223, #0f1f2f 56%, #132a3d);
+}
+
+.analysis-shell {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, 92vw);
+  margin: 0 auto;
+  padding: 1.6rem 0 6.5rem;
+}
+
+.analysis-navbar {
+  position: sticky;
+  top: 0.8rem;
+  z-index: 55;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: linear-gradient(155deg, rgba(8, 20, 34, 0.88), rgba(17, 33, 52, 0.82));
+  backdrop-filter: blur(16px);
+  border-radius: 1.1rem;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.3);
+}
+
+.analysis-card {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 26px rgba(8, 15, 36, 0.24);
+  padding: 1.1rem;
+}
+
+.analysis-card-title {
+  margin: 0;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.analysis-hero {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(160deg, rgba(6, 16, 28, 0.97), rgba(10, 25, 42, 0.94)) !important;
+  box-shadow: 0 28px 44px rgba(2, 8, 20, 0.48);
+}
+
+.bg-radial {
+  background: radial-gradient(circle at 40% 30%, rgba(245, 158, 11, 0.6), transparent 58%);
+}
+
+.analysis-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(2, 6, 23, 0.1), rgba(2, 6, 23, 0.32));
+}
+
+.analysis-panel-dark {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: linear-gradient(160deg, rgba(8, 19, 33, 0.95), rgba(12, 28, 46, 0.92)) !important;
+  box-shadow: 0 22px 36px rgba(2, 8, 20, 0.4);
+}
+
+.panic-main-btn {
+  width: 3.5rem;
+  height: 3.5rem;
+  background: linear-gradient(145deg, #ef4444, #be123c);
+}
+
+.analysis-grid-fade {
+  animation: riseIn 0.6s ease-out both;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .analysis-shell {
+    width: min(1180px, 94vw);
+    padding-top: 1rem;
+  }
+
+  .analysis-navbar {
+    top: 0.45rem;
+  }
+}

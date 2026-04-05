@@ -1,5 +1,6 @@
 import React from "react";
 import { FaHome, FaUserCircle, FaComments } from "react-icons/fa";
+import { FaChartLine } from "react-icons/fa6";
 
 function MobileNavBar({ active, onChat, onNavigate }) {
   return (
@@ -14,6 +15,17 @@ function MobileNavBar({ active, onChat, onNavigate }) {
         >
           <FaHome className="text-lg" />
           Home
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onNavigate("/analysis")}
+          className={`flex flex-col items-center gap-1 text-[10px] font-semibold ${
+            active === "analysis" ? "text-white" : "text-white/70"
+          }`}
+        >
+          <FaChartLine className="text-lg" />
+          Analysis
         </button>
 
         <button

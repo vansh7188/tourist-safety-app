@@ -81,6 +81,12 @@ function Dashboard() {
           <div className="flex items-center gap-4">
             <SafetyAlertIndicator />
             <button
+              onClick={() => navigate("/analysis")}
+              className="px-3 py-2 bg-cyan-600 text-white rounded-lg text-xs font-semibold hover:bg-cyan-700 transition"
+            >
+              Area Analysis
+            </button>
+            <button
               onClick={() => navigate("/admin/dashboard")}
               className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition"
             >
