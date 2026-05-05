@@ -108,21 +108,24 @@ function Dashboard() {
         </div>
 
         <div className="flex flex-1 px-4 md:px-6 py-6 md:py-8 pb-28 md:pb-8">
-          <div className="dashboard-grid w-full grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
-            <LeftPanel
-              setStartLocation={setStartLocation}
-              setCurrentLocation={setCurrentLocation}
-              currentLocation={currentLocation}
-            />
+          <div className="dashboard-grid w-full flex flex-col gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
+              <LeftPanel
+                setStartLocation={setStartLocation}
+                setCurrentLocation={setCurrentLocation}
+                currentLocation={currentLocation}
+              />
 
-            <div className="dashboard-right xl:sticky xl:top-24 xl:h-[calc(100vh-8rem)]">
-              <SmartSafetyAlerts />
-              <div className="hidden lg:block">
-                <Chatbot />
+              <div className="dashboard-right">
+                <SmartSafetyAlerts />
+                <div className="hidden lg:block">
+                  <Chatbot />
+                </div>
               </div>
-              <div className="trip-bottom">
-                <TripPlanner tripPlan={tripPlan} setTripPlan={setTripPlan} />
-              </div>
+            </div>
+
+            <div className="w-full">
+              <TripPlanner tripPlan={tripPlan} setTripPlan={setTripPlan} />
             </div>
           </div>
         </div>
