@@ -1,4 +1,4 @@
-AmonBile Expo React Native app
+TravelGuard AI Expo React Native app
 
 Quick start
 
