@@ -26,7 +26,48 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
+const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+
+const generateGeminiText = async (prompt) => {
+  let lastError = null;
+
+  for (const model of GEMINI_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+      });
+
+      const text =
+        response.text ||
+        response.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "";
+
+      if (text) {
+        return { text, model };
+      }
+    } catch (error) {
+      lastError = error;
+      const message = error?.message || "";
+
+      if (
+        message.includes("permission") ||
+        message.includes("not enabled") ||
+        message.includes("API key") ||
+        message.includes("model") ||
+        message.includes("429")
+      ) {
+        console.warn(`Gemini model ${model} unavailable:`, message);
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw lastError || new Error("Gemini model unavailable");
+};
 
 const validatePlacesApiKey = async () => {
   if (!GOOGLE_MAPS_API_KEY) {
@@ -77,136 +118,52 @@ const haversineKm = (a, b) => {
 
 const getNearbyPlaces = async (location, category) => {
   if (!GOOGLE_MAPS_API_KEY) {
-    throw new Error("GOOGLE_MAPS_API_KEY missing in .env");
+    console.warn("Nearby place search skipped: GOOGLE_MAPS_API_KEY missing.");
+    return [];
   }
 
   const { lat, lng } = location;
   const radiusMeters = 3000;
   const fieldMask = "places.displayName,places.formattedAddress,places.location";
 
-  const searchNearby = async (includedTypes, keyword) => {
-    const res = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
-        "X-Goog-FieldMask": fieldMask,
-      },
-      body: JSON.stringify({
-        includedTypes,
-        maxResultCount: 10,
-        locationRestriction: {
-          circle: {
-            center: { latitude: lat, longitude: lng },
-            radius: radiusMeters,
-          },
+  try {
+    const searchNearby = async (includedTypes, keyword) => {
+      const res = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+          "X-Goog-FieldMask": fieldMask,
         },
-      }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error?.message || "Failed to fetch nearby places");
-    }
-
-    let places = data.places || [];
-    if (keyword) {
-      const lower = keyword.toLowerCase();
-      places = places.filter((place) =>
-        place.displayName?.text?.toLowerCase().includes(lower)
-      );
-    }
-
-    return places;
-  };
-
-  const searchText = async (textQuery) => {
-    const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
-        "X-Goog-FieldMask": fieldMask,
-      },
-      body: JSON.stringify({
-        textQuery,
-        maxResultCount: 10,
-        locationBias: {
-          circle: {
-            center: { latitude: lat, longitude: lng },
-            radius: radiusMeters,
+        body: JSON.stringify({
+          includedTypes,
+          maxResultCount: 10,
+          locationRestriction: {
+            circle: {
+              center: { latitude: lat, longitude: lng },
+              radius: radiusMeters,
+            },
           },
-        },
-      }),
-    });
+        }),
+      });
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error?.message || "Failed to fetch nearby places");
-    }
-
-    return data.places || [];
-  };
-
-  let places = [];
-  if (category === "police") {
-    places = await searchNearby(["police"]);
-  } else if (category === "hospital") {
-    places = await searchNearby(["hospital"]);
-  } else if (category === "hotel") {
-    places = await searchNearby(["lodging"], "hotel");
-  } else if (category === "hostel") {
-    places = await searchNearby(["lodging"], "hostel");
-  } else if (category === "highway") {
-    places = await searchText("highway near me");
-  } else {
-    places = await searchText(`${category} near me`);
-  }
-
-  const results = places.slice(0, 3).map((place) => {
-    const placeLoc = place.location;
-    const distanceKm = placeLoc
-      ? haversineKm(
-          { lat, lng },
-          { lat: placeLoc.latitude, lng: placeLoc.longitude }
-        )
-      : null;
-    return {
-      name: place.displayName?.text || "Unknown",
-      address: place.formattedAddress || "Address unavailable",
-      distanceKm,
-      coordinates: placeLoc
-        ? { lat: placeLoc.latitude, lng: placeLoc.longitude }
-        : null,
-    };
-  });
-
-  return results;
-};
-
-const getPlacesForQueries = async (queries, location) => {
-  if (!GOOGLE_MAPS_API_KEY) {
-    throw new Error("GOOGLE_MAPS_API_KEY missing in .env");
-  }
-
-  const fieldMask = "places.displayName,places.formattedAddress,places.location";
-
-  const results = await Promise.all(
-    queries.map(async (query) => {
-      const body = {
-        textQuery: query,
-        maxResultCount: 1,
-      };
-
-      if (location?.lat && location?.lng) {
-        body.locationBias = {
-          circle: {
-            center: { latitude: location.lat, longitude: location.lng },
-            radius: 50000,
-          },
-        };
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error?.message || "Failed to fetch nearby places");
       }
 
+      let places = data.places || [];
+      if (keyword) {
+        const lower = keyword.toLowerCase();
+        places = places.filter((place) =>
+          place.displayName?.text?.toLowerCase().includes(lower)
+        );
+      }
+
+      return places;
+    };
+
+    const searchText = async (textQuery) => {
       const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
         method: "POST",
         headers: {
@@ -214,37 +171,133 @@ const getPlacesForQueries = async (queries, location) => {
           "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
           "X-Goog-FieldMask": fieldMask,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          textQuery,
+          maxResultCount: 10,
+          locationBias: {
+            circle: {
+              center: { latitude: lat, longitude: lng },
+              radius: radiusMeters,
+            },
+          },
+        }),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json();
       if (!res.ok) {
-        console.warn("Places searchText error:", data.error?.message || res.statusText);
-        return null;
+        throw new Error(data.error?.message || "Failed to fetch nearby places");
       }
 
-      const place = data.places?.[0];
-      if (!place) return null;
+      return data.places || [];
+    };
 
+    let places = [];
+    if (category === "police") {
+      places = await searchNearby(["police"]);
+    } else if (category === "hospital") {
+      places = await searchNearby(["hospital"]);
+    } else if (category === "hotel") {
+      places = await searchNearby(["lodging"], "hotel");
+    } else if (category === "hostel") {
+      places = await searchNearby(["lodging"], "hostel");
+    } else if (category === "highway") {
+      places = await searchText("highway near me");
+    } else {
+      places = await searchText(`${category} near me`);
+    }
+
+    const results = places.slice(0, 3).map((place) => {
       const placeLoc = place.location;
+      const distanceKm = placeLoc
+        ? haversineKm(
+            { lat, lng },
+            { lat: placeLoc.latitude, lng: placeLoc.longitude }
+          )
+        : null;
       return {
-        name: place.displayName?.text || query,
+        name: place.displayName?.text || "Unknown",
         address: place.formattedAddress || "Address unavailable",
-        distanceKm:
-          location && placeLoc
-            ? haversineKm(
-                { lat: location.lat, lng: location.lng },
-                { lat: placeLoc.latitude, lng: placeLoc.longitude }
-              )
-            : null,
+        distanceKm,
         coordinates: placeLoc
           ? { lat: placeLoc.latitude, lng: placeLoc.longitude }
           : null,
       };
-    })
-  );
+    });
 
-  return results.filter(Boolean).slice(0, 3);
+    return results;
+  } catch (error) {
+    console.warn("Nearby place lookup failed:", error.message || error);
+    return [];
+  }
+};
+
+const getPlacesForQueries = async (queries, location) => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    console.warn("Places lookup skipped: GOOGLE_MAPS_API_KEY missing.");
+    return [];
+  }
+
+  const fieldMask = "places.displayName,places.formattedAddress,places.location";
+
+  try {
+    const results = await Promise.all(
+      queries.map(async (query) => {
+        const body = {
+          textQuery: query,
+          maxResultCount: 1,
+        };
+
+        if (location?.lat && location?.lng) {
+          body.locationBias = {
+            circle: {
+              center: { latitude: location.lat, longitude: location.lng },
+              radius: 50000,
+            },
+          };
+        }
+
+        const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+            "X-Goog-FieldMask": fieldMask,
+          },
+          body: JSON.stringify(body),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          console.warn("Places searchText error:", data.error?.message || res.statusText);
+          return null;
+        }
+
+        const place = data.places?.[0];
+        if (!place) return null;
+
+        const placeLoc = place.location;
+        return {
+          name: place.displayName?.text || query,
+          address: place.formattedAddress || "Address unavailable",
+          distanceKm:
+            location && placeLoc
+              ? haversineKm(
+                  { lat: location.lat, lng: location.lng },
+                  { lat: placeLoc.latitude, lng: placeLoc.longitude }
+                )
+              : null,
+          coordinates: placeLoc
+            ? { lat: placeLoc.latitude, lng: placeLoc.longitude }
+            : null,
+        };
+      })
+    );
+
+    return results.filter(Boolean).slice(0, 3);
+  } catch (error) {
+    console.warn("Places lookup failed:", error.message || error);
+    return [];
+  }
 };
 
 const safetyAlerts = [
@@ -505,7 +558,8 @@ app.post("/api/chat", async (req, res) => {
 
       if (!places.length) {
         return res.status(200).json({
-          reply: "I could not find nearby places for that request. Try a different query.",
+          reply:
+            "I can help with travel safety advice, but the nearby-place lookup is unavailable right now. Please check your Google Maps API permissions or try a different query.",
         });
       }
 
@@ -540,17 +594,10 @@ User location (if available): ${location?.lat || "N/A"}, ${location?.lng || "N/A
     let places = [];
 
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-      });
+      const response = await generateGeminiText(prompt);
 
-      console.log("✅ Gemini response received");
-
-      reply =
-        response.text ||
-        response.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "Sorry, I could not generate a response right now.";
+      console.log(`✅ Gemini response received using ${response.model}`);
+      reply = response.text || "Sorry, I could not generate a response right now.";
 
       if (GOOGLE_MAPS_API_KEY) {
         const extractionPrompt = `
@@ -569,15 +616,9 @@ Assistant reply: ${reply}
 `;
 
         try {
-          const extraction = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: extractionPrompt,
-          });
+          const extraction = await generateGeminiText(extractionPrompt);
 
-          const extractionText =
-            extraction.text ||
-            extraction.candidates?.[0]?.content?.parts?.[0]?.text ||
-            "";
+          const extractionText = extraction.text || "";
 
           const parsed = extractJson(extractionText);
           const destinations = Array.isArray(parsed?.destinations)
@@ -616,9 +657,47 @@ Assistant reply: ${reply}
     res.status(200).json({ reply, places });
   } catch (err) {
     console.error("❌ Gemini chatbot error:", err);
+    const message = (err.message || "").toLowerCase();
+
+    if (message.includes("permission") || message.includes("forbidden") || message.includes("api key")) {
+      return res.status(200).json({
+        reply:
+          "I’m ready to help with safety advice, but the location/place lookup is currently blocked by a Google API permission issue. Please check the Google Maps configuration.",
+      });
+    }
+
     res.status(500).json({
-      error: err.message || "Failed to get AI response",
+      error: "Failed to get AI response",
     });
+  }
+});
+
+// ----------------- Mobile assistant compatibility route -----------------
+app.post("/assistant", async (req, res) => {
+  try {
+    const { query, message, location } = req.body || {};
+    const userMessage = (query || message || "").trim();
+
+    if (!userMessage) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    const payload = {
+      message: userMessage,
+      location: location || null,
+    };
+
+    const routeRes = await fetch(`http://localhost:${PORT}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await routeRes.json();
+    return res.status(routeRes.status).json(data);
+  } catch (error) {
+    console.error("Assistant compatibility route error:", error);
+    return res.status(500).json({ error: "Assistant is unavailable right now." });
   }
 });
 

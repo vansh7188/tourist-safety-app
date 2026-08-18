@@ -34,13 +34,13 @@ function SmartSafetyAlerts() {
     areaRating >= 4 ? "text-emerald-700" : areaRating >= 3 ? "text-amber-700" : "text-red-700";
 
   return (
-    <div className="bg-gradient-to-br from-sky-50 via-white to-emerald-50 border border-sky-100 rounded-2xl p-5 shadow-sm">
+    <div className="section-card premium-card p-5 xl:h-[46%] overflow-y-auto">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-blue-800">Smart Area Safety Alerts</h3>
+          <h3 className="text-lg font-semibold text-blue-900">Smart Area Safety Alerts</h3>
           <span className="text-xs text-slate-500">Radius: {radiusKm} km</span>
         </div>
-        <div className="min-w-[120px] rounded-xl border border-white bg-white/90 px-3 py-2 text-right shadow-sm">
+        <div className="min-w-[120px] accent-card px-3 py-2 text-right shadow-sm">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             Area Rating
           </div>
@@ -62,9 +62,9 @@ function SmartSafetyAlerts() {
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="border border-slate-200 bg-white/90 rounded-xl p-3">
+        <div className="feature-grid-card p-3">
           <div className="text-sm font-semibold text-slate-700 mb-2">Nearby alerts</div>
-          <div className="flex flex-col gap-2 max-h-44 overflow-y-auto">
+          <div className="flex flex-col gap-2 max-h-36 overflow-y-auto">
             {detailedAlerts.length === 0 && (
               <div className="text-xs text-slate-500">No alerts in your area.</div>
             )}
@@ -73,7 +73,7 @@ function SmartSafetyAlerts() {
                 type="button"
                 key={alert.id}
                 onClick={() => setSelectedAlert(alert)}
-                className="text-left border border-slate-200 rounded-lg px-3 py-2 hover:bg-sky-50"
+                className="text-left border border-slate-200 rounded-lg px-3 py-2 hover:bg-sky-50 transition"
               >
                 <div className="text-sm font-semibold text-gray-800">
                   {labelForType(alert.type)}
@@ -86,7 +86,7 @@ function SmartSafetyAlerts() {
           </div>
         </div>
 
-        <div className="border border-slate-200 bg-white/90 rounded-xl p-3">
+        <div className="feature-grid-card p-3">
           <div className="text-sm font-semibold text-slate-700 mb-2">Alert details</div>
           {selectedAlert ? (
             <div className="text-sm text-slate-700 space-y-1">
