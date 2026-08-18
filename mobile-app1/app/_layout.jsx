@@ -1,7 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { AuthProvider } from './context/AuthContext';
-import { Text } from 'react-native';
+import { AuthProvider } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Layout() {
