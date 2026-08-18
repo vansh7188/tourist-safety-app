@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-function Chatbot() {
+function Chatbot({ compact = false }) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([
     {
@@ -97,8 +97,12 @@ function Chatbot() {
     }
   };
 
+  const chatHeightClass = compact
+    ? "h-[240px] xl:h-[280px]"
+    : "h-[390px]";
+
   return (
-    <div className="w-full section-card p-5 lg:-mt-1 border border-sky-100">
+    <div className={`w-full section-card premium-card p-4 md:p-5 ${compact ? "h-full flex flex-col" : ""}`}>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="section-title font-bold text-lg">
         🤖 AI Safety Chatbot
@@ -112,7 +116,7 @@ function Chatbot() {
         <div className="mb-3 text-sm text-red-600">{locationError}</div>
       )}
 
-      <div className="h-[390px] overflow-y-auto border border-slate-200 rounded-2xl p-4 mb-4 bg-white/80">
+      <div className={`${chatHeightClass} overflow-y-auto border border-slate-200 rounded-2xl p-4 mb-4 bg-white/80`}>
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -181,7 +185,7 @@ function Chatbot() {
         )}
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 mt-auto">
         <input
           type="text"
           placeholder="Ask about travel safety..."

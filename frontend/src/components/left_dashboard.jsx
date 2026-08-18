@@ -15,10 +15,9 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
     localStorage.setItem("showMap", JSON.stringify(showMap));
   }, [showMap]);
 
-  console.log(currentLocation)
   return (
     <motion.div
-      className="flex-1 max-w-4xl mx-auto section-card p-5 md:p-7"
+      className="flex-1 section-card premium-card p-5 md:p-6 h-full overflow-y-auto"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, type: "spring", stiffness: 120 }}
@@ -36,7 +35,7 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
       </div>
 
       {/* Map Section */}
-      <div className="w-full h-[26rem] md:h-[32rem] rounded-2xl overflow-hidden shadow-inner border border-white/70">
+      <div className="w-full h-[19rem] md:h-[22rem] rounded-2xl overflow-hidden shadow-inner border border-white/70">
         {showMap ? (
           <MapComponent
             setStartLocation={setStartLocation}
@@ -68,7 +67,6 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
         </motion.div>
       )}
 
-      {/* Panic Button */}
       {/* Panic Button */}
       <motion.div
         className="flex justify-center mt-8"

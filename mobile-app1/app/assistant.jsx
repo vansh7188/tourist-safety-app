@@ -35,14 +35,15 @@ export default function AssistantScreen() {
     const msg = { id: Date.now().toString(), text: input.trim(), fromUser: true };
     setMessages((m) => [...m, msg]);
     setInput('');
-    // call backend RAG endpoint
+
     try {
-      const res = await api.post('/assistant', { query: msg.text });
+      const res = await api.post('/chat', { message: msg.text, location: null });
       const reply = res?.data?.reply || 'Sorry, I could not find an answer.';
       setMessages((m) => [...m, { id: Date.now()+1, text: reply, fromUser: false }]);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 200);
     } catch (err) {
-      setMessages((m) => [...m, { id: Date.now()+2, text: 'Error connecting to assistant.', fromUser: false }]);
+      const serverMessage = err?.response?.data?.error || 'Error connecting to assistant.';
+      setMessages((m) => [...m, { id: Date.now()+2, text: serverMessage, fromUser: false }]);
     }
   };
 
