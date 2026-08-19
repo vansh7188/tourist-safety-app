@@ -34,7 +34,7 @@ function SmartSafetyAlerts() {
     areaRating >= 4 ? "text-emerald-700" : areaRating >= 3 ? "text-amber-700" : "text-red-700";
 
   return (
-    <div className="section-card premium-card p-5 xl:h-[46%] overflow-y-auto">
+    <div className="section-card rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-md md:p-5">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <h3 className="text-lg font-semibold text-blue-900">Smart Area Safety Alerts</h3>

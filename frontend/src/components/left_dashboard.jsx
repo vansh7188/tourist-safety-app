@@ -17,7 +17,7 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
 
   return (
     <motion.div
-      className="flex-1 section-card premium-card p-5 md:p-6 h-full overflow-y-auto"
+      className="flex h-full min-h-0 flex-col rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-md backdrop-blur-md md:p-5"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, type: "spring", stiffness: 120 }}
@@ -35,7 +35,7 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
       </div>
 
       {/* Map Section */}
-      <div className="w-full h-[19rem] md:h-[22rem] rounded-2xl overflow-hidden shadow-inner border border-white/70">
+      <div className="min-h-0 flex-1 w-full rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-100 shadow-sm">
         {showMap ? (
           <MapComponent
             setStartLocation={setStartLocation}
@@ -53,7 +53,7 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
       {/* Start Live Tracking Button */}
       {!showMap && (
         <motion.div
-          className="flex justify-center mt-6"
+          className="flex justify-center pt-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -69,7 +69,7 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
 
       {/* Panic Button */}
       <motion.div
-        className="flex justify-center mt-8"
+        className="flex justify-center pt-4"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
@@ -80,7 +80,7 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
 
       {/* Location Details */}
       {currentLocation && (
-        <div className="mt-6 p-4 md:p-5 surface-muted rounded-2xl shadow text-sm">
+        <div className="mt-4 max-h-28 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 p-3 text-xs shadow-sm">
           <h3 className="font-bold text-slate-800 mb-3 text-base">📍 Current Location</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <p><strong>Address:</strong> {currentLocation.displayName}</p>

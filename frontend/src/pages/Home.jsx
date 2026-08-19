@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaShieldAlt, FaMapMarkedAlt, FaBell, FaRoute } from "react-icons/fa";
@@ -28,24 +28,12 @@ function Home() {
 
   const fullText =
     "Your travel companion that ensures safety, guides you through secure paths.";
-  const [displayedText, setDisplayedText] = useState("");
-
-  useEffect(() => {
-    let index = 0;
-    const interval = setInterval(() => {
-      setDisplayedText(fullText.slice(0, index + 1));
-      index += 1;
-      if (index === fullText.length) clearInterval(interval);
-    }, 60);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <div className="min-h-screen app-shell flex flex-col px-4 pb-10 sm:px-6">
-      <div className="w-full max-w-7xl mx-auto pt-4 sm:pt-6">
-        <div className="section-card px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
+    <div className="min-h-screen w-full app-shell flex flex-col">
+      <div className="w-full border-b border-slate-200/80 bg-white/80 px-4 py-4 backdrop-blur-md sm:px-8">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-sky-500 flex items-center justify-center text-white shadow-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
             <FaShieldAlt />
             </div>
             <div>
@@ -59,15 +47,15 @@ function Home() {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/login")}
-            className="btn-accent px-5 py-2 text-sm font-semibold"
+            className="rounded-xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
           >
             Get Started
           </motion.button>
         </div>
       </div>
 
-      <div className="w-full max-w-7xl mx-auto flex-1 grid lg:grid-cols-[1.08fr_0.92fr] gap-6 lg:gap-8 pt-6 sm:pt-8">
-        <div className="section-card premium-card p-6 md:p-8 lg:p-9 flex flex-col justify-center">
+      <main className="grid w-full flex-1 grid-cols-1 items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-2 lg:px-12 lg:py-12">
+        <div className="flex flex-col justify-center rounded-2xl border border-slate-200/80 bg-white/80 p-6 shadow-md backdrop-blur-md md:p-10">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
             Real-time safety companion
@@ -81,19 +69,19 @@ function Home() {
             Smart Tourist Safety
           </motion.h1>
           <p className="mt-4 text-lg text-slate-600 max-w-xl">
-            {displayedText}
+            {fullText}
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
             <button
               onClick={() => navigate("/login")}
-              className="btn-primary px-6 py-3 text-sm font-semibold"
+              className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
             >
               Start Your Journey
             </button>
             <button
               onClick={() => navigate("/login")}
-              className="surface-muted px-6 py-3 text-sm font-semibold text-slate-700 rounded-xl"
+              className="rounded-xl border border-slate-200/80 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
               Explore Features
             </button>
@@ -117,18 +105,16 @@ function Home() {
         </div>
 
         <motion.div
-          className="relative section-card accent-card p-3 sm:p-4 flex items-center justify-center overflow-hidden"
+          className="relative flex min-h-[24rem] items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 p-3 shadow-md sm:min-h-[34rem]"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="absolute -right-14 -top-14 h-40 w-40 rounded-full bg-emerald-200/60 blur-3xl" />
-          <div className="absolute -left-14 -bottom-14 h-40 w-40 rounded-full bg-sky-200/70 blur-3xl" />
-          <div className="relative overflow-hidden rounded-3xl shadow-2xl border border-white/60 w-full">
+          <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-white/80 shadow-md">
             <img
               src="/map.png"
               alt="Tourist Safety"
-              className="w-full h-[340px] sm:h-[420px] md:h-[520px] object-cover"
+              className="h-[22rem] w-full object-cover sm:h-[30rem]"
             />
             <div className="absolute left-4 bottom-4 right-4 rounded-2xl bg-slate-900/60 backdrop-blur px-4 py-3 text-white">
               <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-sky-200">
@@ -141,7 +127,7 @@ function Home() {
             </div>
           </div>
         </motion.div>
-      </div>
+      </main>
     </div>
   );
 }

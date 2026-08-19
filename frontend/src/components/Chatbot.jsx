@@ -102,7 +102,7 @@ function Chatbot({ compact = false }) {
     : "h-[390px]";
 
   return (
-    <div className={`w-full section-card premium-card p-4 md:p-5 ${compact ? "h-full flex flex-col" : ""}`}>
+    <div className={`w-full rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-md md:p-5 ${compact ? "h-full flex flex-col" : ""}`}>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="section-title font-bold text-lg">
         🤖 AI Safety Chatbot
