@@ -722,57 +722,6 @@ function PanicButton({ currentLocation }) {
       />
 
       <div className="flex gap-4 items-center">
-        {/* Test Panic Button - Simple version for debugging */}
-        <motion.button
-          onClick={async () => {
-            console.log("🧪 Testing simple panic request...");
-            const token = localStorage.getItem("token");
-            const email = localStorage.getItem("email");
-
-            if (!token || !email) {
-              console.error("❌ Missing token or email");
-              return;
-            }
-
-            try {
-              const testPayload = {
-                email: email,
-                name: "Test User",
-                contact_number: "+919876543210",
-                panic_query: "Test panic from frontend",
-                kyc: { aadhaar: { number: null }, passport: { number: null, country: null } },
-                emergency_contacts: [],
-                locations: []
-              };
-
-              console.log("📦 Test payload:", testPayload);
-
-              const response = await fetch(`${API_BASE_URL}/api/digitalid/panic`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(testPayload),
-              });
-
-              const result = await response.json();
-              console.log("📡 Test response:", response.status, result);
-
-              if (response.ok) {
-                console.log("✅ Test panic saved successfully!");
-              } else {
-                console.error("❌ Test panic failed:", result);
-              }
-            } catch (error) {
-              console.error("❌ Test panic error:", error);
-            }
-          }}
-          className="px-6 py-3 bg-green-500 text-white font-bold rounded-xl shadow-lg hover:bg-green-600"
-        >
-          ✅ WORKING
-        </motion.button>
-
         {/* Panic Button */}
         <motion.button
           onClick={handlePanic}

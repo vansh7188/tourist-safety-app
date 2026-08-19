@@ -7,7 +7,7 @@ import {
 
 const containerStyle = {
   width: "100%",
-  height: "500px",
+  height: "100%",
   borderRadius: "12px",
   position: "relative",
 };
@@ -134,7 +134,7 @@ const MapComponent = ({ setStartLocation, setCurrentLocation }) => {
   };
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "500px" }}>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={currentCoords || { lat: 28.6139, lng: 77.209 }}

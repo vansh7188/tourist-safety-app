@@ -105,10 +105,10 @@ function Auth() {
   };
 
   return (
-    <div className="min-h-screen app-shell flex items-center justify-center px-6 py-10">
-      <div className="relative w-full max-w-4xl grid md:grid-cols-[1.1fr_0.9fr] overflow-hidden rounded-3xl shadow-2xl section-card">
+    <div className="min-h-screen w-full app-shell flex items-center justify-center px-4 py-8 sm:px-8 lg:px-12">
+      <div className="relative grid min-h-[min(760px,calc(100vh-4rem))] w-full max-w-6xl overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 shadow-md backdrop-blur-md md:grid-cols-2">
         <motion.div
-          className="p-8 md:p-10 flex flex-col justify-center gap-6"
+          className="flex flex-col justify-center gap-8 p-6 sm:p-10 lg:p-14"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -117,37 +117,37 @@ function Auth() {
             <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
               Safe Travel
             </p>
-            <h2 className="text-3xl font-extrabold text-slate-900">
+            <h2 className="mt-2 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
               {isSignUp ? "Create your account" : "Welcome back"}
             </h2>
-            <p className="text-sm text-slate-600 mt-2">
+            <p className="mt-3 max-w-lg text-base leading-relaxed text-slate-600 sm:text-lg">
               {isSignUp
                 ? "Join to unlock live safety alerts and secure travel tools."
                 : "Sign in to access your safety dashboard."}
             </p>
           </div>
 
-          <form onSubmit={handleAuth} className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 rounded-xl border border-white/60 bg-white/80 px-4 py-3">
-              <FaEnvelope className="text-emerald-500" />
+          <form onSubmit={handleAuth} className="flex max-w-xl flex-col gap-5">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-4 shadow-sm">
+              <FaEnvelope className="text-lg text-emerald-500" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
-                className="w-full bg-transparent outline-none text-sm"
+                className="w-full bg-transparent text-base outline-none"
                 required
               />
             </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-white/60 bg-white/80 px-4 py-3">
-              <FaLock className="text-emerald-500" />
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-4 shadow-sm">
+              <FaLock className="text-lg text-emerald-500" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="w-full bg-transparent outline-none text-sm"
+                className="w-full bg-transparent text-base outline-none"
                 required
               />
             </div>
@@ -155,7 +155,7 @@ function Auth() {
             <motion.button
               type="submit"
               disabled={loading}
-              className={`py-3 rounded-xl font-semibold text-white shadow-lg ${
+              className={`rounded-xl py-4 text-base font-semibold text-white shadow-sm ${
                 loading ? "bg-slate-400" : "btn-accent"
               }`}
               whileHover={!loading ? { scale: 1.02 } : {}}
@@ -171,7 +171,7 @@ function Auth() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="p-3 rounded-lg text-center font-semibold bg-rose-500 text-white shadow-lg"
+              className="rounded-xl bg-rose-500 p-4 text-center font-semibold text-white shadow-sm"
             >
               ⚠️ {error}
             </motion.div>
@@ -183,7 +183,7 @@ function Auth() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="p-3 rounded-lg text-center font-semibold bg-emerald-500 text-white shadow-lg"
+              className="rounded-xl bg-emerald-500 p-4 text-center font-semibold text-white shadow-sm"
             >
               ✅ {success}
             </motion.div>
@@ -219,7 +219,7 @@ function Auth() {
         </motion.div>
 
         <motion.div
-          className="hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-emerald-600 via-teal-600 to-sky-600 text-white"
+          className="hidden flex-col justify-between bg-gradient-to-br from-emerald-700 via-teal-700 to-sky-700 p-10 text-white md:flex lg:p-14"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
@@ -229,10 +229,10 @@ function Auth() {
             Traveler Shield
           </div>
           <div>
-            <h3 className="text-3xl font-bold mb-3">
+            <h3 className="mb-4 text-4xl font-extrabold tracking-tight lg:text-5xl">
               {isSignUp ? "Step into safer travel" : "Stay protected"}
             </h3>
-            <p className="text-sm text-white/90">
+            <p className="max-w-md text-lg leading-relaxed text-white/90">
               Get live alerts, verified contacts, and directions to safe spots.
             </p>
           </div>
