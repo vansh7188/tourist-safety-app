@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import { createServer } from "http";
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -17,10 +18,23 @@ import {
 } from "./DigitalidForm.js";
 import { createAdminRouter } from "./adminRoutes.js";
 import Admin from "./models/Admin.js";
+import { EmergencyPost } from "./models/EmergencyPost.js";
+import { Message } from "./models/Message.js";
+import { createEmergencyRouter } from "./emergencyRoutes.js";
+import { createSocketServer } from "./socket.js";
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+
+const socketServer = createSocketServer({
+  server: httpServer,
+  jwtSecret: JWT_SECRET,
+  Profile,
+  EmergencyPost,
+  Message,
+});
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -751,6 +765,16 @@ app.post("/assistant", async (req, res) => {
 const digitalIdRouter = createDigitalIdRouter(DigitalId);
 app.use("/api/digitalid", authMiddleware, digitalIdRouter);
 
+// ----------------- Emergency Helper Routes (Protected) -----------------
+const emergencyRouter = createEmergencyRouter({
+  EmergencyPost,
+  Profile,
+  Message,
+  emitToUser: socketServer.emitToUser,
+  joinUserToRoom: socketServer.joinUserToRoom,
+});
+app.use("/api/emergency", authMiddleware, emergencyRouter);
+
 // ----------------- Admin Routes -----------------
 const adminRouter = createAdminRouter();
 app.use("/api/admin", adminRouter);
@@ -778,7 +802,7 @@ app.get("/api/alerts", async (req, res) => {
 });
 
 // ----------------- Start Server -----------------
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);
   validatePlacesApiKey();
 });
