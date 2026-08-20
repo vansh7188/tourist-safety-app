@@ -202,7 +202,27 @@ function DigitalidForm() {
     try {
       const token = localStorage.getItem("token");
       const email = localStorage.getItem("email") || formData.email;
-      const payload = { ...formData, email };
+      const position = await new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("Location is not supported by this browser."));
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(resolve, () => {
+          reject(new Error("Please allow location access to save your profile."));
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+      });
+
+      const payload = {
+        ...formData,
+        email,
+        lastKnownLocation: {
+          type: "Point",
+          coordinates: [position.coords.longitude, position.coords.latitude],
+        },
+        isOnline: true,
+        lastActiveAt: new Date().toISOString(),
+      };
       const res = await fetch(`${API_BASE_URL}/api/digitalid/digital-id`, {
         method: isEditMode ? "PUT" : "POST",
         headers: {
