@@ -74,7 +74,12 @@ function ProfileForm() {
       return;
     }
     try {
-      await axios.post(`${API_BASE_URL}/profile`, form);
+      const token = localStorage.getItem("token");
+      await axios.post(`${API_BASE_URL}/profile`, form, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       alert("Profile saved successfully");
     } catch (err) {
       console.log(err);
