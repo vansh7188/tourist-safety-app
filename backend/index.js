@@ -347,7 +347,7 @@ app.use(
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -516,6 +516,52 @@ app.post("/profile", authMiddleware, async (req, res) => {
   } catch (err) {
     console.error("Profile error:", err);
     res.status(400).json({ error: err.message });
+  }
+});
+
+// ----------------- Live Profile Location Route (Protected) -----------------
+app.patch("/api/profile/location", authMiddleware, async (req, res) => {
+  const lat = Number(req.body?.lat);
+  const lng = Number(req.body?.lng);
+
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180
+  ) {
+    return res.status(400).json({ error: "Valid lat and lng are required" });
+  }
+
+  try {
+    const profile = await Profile.findOneAndUpdate(
+      { email: req.user.email },
+      {
+        lastKnownLocation: {
+          type: "Point",
+          coordinates: [lng, lat],
+        },
+        isOnline: true,
+        lastActiveAt: new Date(),
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    return res.status(200).json({
+      message: "Location updated",
+      location: profile.lastKnownLocation,
+      isOnline: profile.isOnline,
+      lastActiveAt: profile.lastActiveAt,
+    });
+  } catch (err) {
+    console.error("Profile location error:", err);
+    return res.status(500).json({ error: "Failed to update location" });
   }
 });
 

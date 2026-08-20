@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   GoogleMap,
   Marker,
@@ -17,6 +17,8 @@ const MapComponent = ({ setStartLocation, setCurrentLocation }) => {
   const [startCoords, setStartCoords] = useState(null);
   const [currentCoords, setCurrentCoords] = useState(null);
   const [path, setPath] = useState([]);
+  const lastLocationSentAt = useRef(0);
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const parseLocationDetails = (result, lat, lon) => {
     const components = result?.address_components || [];
@@ -101,6 +103,22 @@ const MapComponent = ({ setStartLocation, setCurrentLocation }) => {
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+
+        const token = localStorage.getItem("token");
+        const now = Date.now();
+        if (token && now - lastLocationSentAt.current >= 15000) {
+          lastLocationSentAt.current = now;
+          fetch(`${API_BASE_URL}/api/profile/location`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ lat: latitude, lng: longitude }),
+          }).catch((error) => {
+            console.warn("Live location update failed:", error.message);
+          });
+        }
 
         if (!startCoords) {
           setStartCoords({ lat: latitude, lng: longitude });
