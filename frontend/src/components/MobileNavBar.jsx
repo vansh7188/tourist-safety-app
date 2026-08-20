@@ -1,5 +1,5 @@
 import React from "react";
-import { FaHome, FaUserCircle, FaComments } from "react-icons/fa";
+import { FaHome, FaUserCircle, FaComments, FaLifeRing } from "react-icons/fa";
 
 function MobileNavBar({ active, onChat, onNavigate }) {
   return (
@@ -14,6 +14,17 @@ function MobileNavBar({ active, onChat, onNavigate }) {
         >
           <FaHome className="text-lg" />
           Home
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onNavigate("/emergency")}
+          className={`flex flex-col items-center gap-1 text-[10px] font-semibold ${
+            active === "emergency" ? "text-white" : "text-white/70"
+          }`}
+        >
+          <FaLifeRing className="text-lg" />
+          Emergency
         </button>
 
         <button
