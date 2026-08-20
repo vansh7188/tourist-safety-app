@@ -12,6 +12,19 @@ const profileSchema = new mongoose.Schema({
   age: { type: Number, min: 18 },
   otpEmail: { type: String },      // temporary email OTP
   otpContact: { type: String },    // temporary contact OTP
+  lastKnownLocation: {
+    type: {
+      type: String,
+      enum: ["Point"],
+    },
+    coordinates: {
+      type: [Number],
+    },
+  },
+  isOnline: { type: Boolean, default: false },
+  lastActiveAt: { type: Date },
 }, { timestamps: true });
+
+profileSchema.index({ lastKnownLocation: "2dsphere" });
 
 export const Profile = mongoose.model("Profile", profileSchema);

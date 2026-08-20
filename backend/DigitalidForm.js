@@ -6,6 +6,7 @@ import twilio from "twilio";
 import nodemailer from "nodemailer";
 import Panic from "./models/panic.js";
 import PanicMedia from "./models/panicMedia.js";
+import { Profile } from "./models/Profile.js";
 import { v2 as cloudinary } from "cloudinary";
 // --- Schemas (Exported so index.js can use them) ---
 
@@ -86,7 +87,37 @@ const digitalIdSchema = new mongoose.Schema({
     },
   },
   emergencyContacts: [emergencyContactSchema],
+  lastKnownLocation: {
+    type: {
+      type: String,
+      enum: ["Point"],
+    },
+    coordinates: {
+      type: [Number],
+    },
+  },
+  isOnline: { type: Boolean, default: false },
+  lastActiveAt: { type: Date },
 });
+
+digitalIdSchema.index({ lastKnownLocation: "2dsphere" });
+
+const syncProfileLocation = async (data) => {
+  if (!data?.email || !data.lastKnownLocation) return;
+
+  await Profile.findOneAndUpdate(
+    { email: data.email },
+    {
+      name: data.name,
+      email: data.email,
+      contact: data.contactInfo,
+      lastKnownLocation: data.lastKnownLocation,
+      isOnline: true,
+      lastActiveAt: data.lastActiveAt || new Date(),
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+};
 
 // This function creates and returns the router.
 // It takes the 'DigitalId' model as a dependency.
@@ -149,6 +180,7 @@ export function createDigitalIdRouter(DigitalId) {
     try {
       const newId = new DigitalId(req.body);
       await newId.save();
+      await syncProfileLocation(newId);
       res.status(201).json({ message: "✅ Digital ID saved", data: newId });
     } catch (error) {
       res.status(400).json({ error: error.message });
@@ -186,6 +218,8 @@ export function createDigitalIdRouter(DigitalId) {
       if (!updated) {
         return res.status(404).json({ error: "Digital ID not found" });
       }
+
+      await syncProfileLocation(updated);
 
       return res.json({ message: "Digital ID updated successfully", data: updated });
     } catch (error) {
