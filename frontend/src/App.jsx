@@ -10,6 +10,9 @@ import Pfile from "./pages/Pfile";
 import DigitalidForm from "./components/DigitalidForm";
 import { TravelProvider } from "./context/TravelContext";
 import Chatbot from "./components/Chatbot";
+import EmergencyChat from "./components/EmergencyChat";
+import { EmergencyProvider } from "./context/EmergencyContext";
+import EmergencyPage from "./pages/EmergencyPage";
 
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
@@ -34,6 +37,15 @@ function App() {
           <Route path="digitalidform" element={<DigitalidForm />} />
           <Route path="digitalid/edit" element={<DigitalidForm />} />
           <Route path="chatbot" element={<Chatbot />} />
+          <Route path="emergency" element={<EmergencyPage />} />
+          <Route
+            path="emergency/:postId"
+            element={
+              <EmergencyProvider>
+                <EmergencyChat />
+              </EmergencyProvider>
+            }
+          />
           <Route path="admin" element={<AdminPanel />} />
           
           {/* Admin Routes */}

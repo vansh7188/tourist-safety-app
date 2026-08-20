@@ -77,7 +77,6 @@ function LeftPanel({ setStartLocation, setCurrentLocation, currentLocation }) {
         <PanicButton currentLocation={currentLocation} />
       </motion.div>
 
-
       {/* Location Details */}
       {currentLocation && (
         <div className="mt-4 max-h-28 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 p-3 text-xs shadow-sm">
