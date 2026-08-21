@@ -119,8 +119,9 @@ export function createSocketServer({ server, jwtSecret, Profile, EmergencyPost, 
           senderId: profileId,
           text: messageText,
         });
+        const populatedMessage = await message.populate("senderId", "name email");
 
-        io.to(`emergency:${postId}`).emit("chat:message", message);
+        io.to(`emergency:${postId}`).emit("chat:message", populatedMessage);
       } catch (error) {
         socket.emit("chat:error", { error: "Failed to send message" });
       }
