@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useEmergency } from "../context/useEmergency";
 
-function IncomingEmergencyAlert({ inline = false }) {
+function IncomingEmergencyAlert({ inline = false, onAccepted, onOpenChat }) {
   const { alerts, dismissAlert } = useEmergency() || {};
-  const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const [acceptingPostId, setAcceptingPostId] = useState(null);
+  const [acceptedPostIds, setAcceptedPostIds] = useState([]);
   const [error, setError] = useState("");
 
   if (!alerts?.length) return null;
@@ -22,8 +21,12 @@ function IncomingEmergencyAlert({ inline = false }) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to accept emergency");
-      dismissAlert(alert.postId);
-      navigate(`/emergency/${alert.postId}`, { state: { roomId: data.roomId } });
+      setAcceptedPostIds((current) => (current.includes(alert.postId) ? current : [...current, alert.postId]));
+      onAccepted?.({
+        postId: alert.postId,
+        text: alert.textSnippet || "Emergency request",
+        roomId: data.roomId,
+      });
     } catch (acceptError) {
       setError(acceptError.message || "Unable to accept emergency");
     } finally {
@@ -33,11 +36,16 @@ function IncomingEmergencyAlert({ inline = false }) {
 
   return (
     <div className={inline
-      ? "grid gap-4 md:grid-cols-2"
+      ? "flex flex-col gap-4"
       : "fixed right-4 top-4 z-60 flex w-[min(92vw,390px)] flex-col gap-3"}
     >
       {alerts.map((alert) => (
         <article key={alert.postId} className="rounded-2xl border border-amber-200 bg-white p-4 shadow-xl">
+          {/** Keep accepted state compact in a single action row to avoid card height jump. */}
+          {(() => {
+            const isAccepted = Boolean(alert.acceptedByMe) || acceptedPostIds.includes(alert.postId);
+            return (
+              <>
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Nearby emergency</p>
@@ -52,15 +60,28 @@ function IncomingEmergencyAlert({ inline = false }) {
           {alert.mediaThumbnail && (
             <img src={alert.mediaThumbnail} alt="Emergency media" className="mt-3 h-28 w-full rounded-xl object-cover" />
           )}
-          <button
-            type="button"
-            onClick={() => acceptEmergency(alert)}
-            disabled={acceptingPostId === alert.postId}
-            className="mt-3 w-full rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-700 disabled:opacity-60"
-          >
-            {acceptingPostId === alert.postId ? "Connecting..." : "Accept and help"}
-          </button>
+          {isAccepted ? (
+            <button
+              type="button"
+              onClick={() => onOpenChat?.(alert.postId)}
+              className="mt-3 h-10 w-full rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white hover:bg-emerald-700"
+            >
+              Accepted | Open chat
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => acceptEmergency(alert)}
+              disabled={acceptingPostId === alert.postId}
+              className="mt-3 h-10 w-full rounded-xl bg-amber-600 px-4 text-sm font-bold text-white hover:bg-amber-700 disabled:opacity-60"
+            >
+              {acceptingPostId === alert.postId ? "Connecting..." : "Accept and help"}
+            </button>
+          )}
           {error && <p className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}
+              </>
+            );
+          })()}
         </article>
       ))}
     </div>

@@ -236,7 +236,16 @@ export function createEmergencyRouter({
         .sort({ createdAt: -1 })
         .limit(20)
         .populate("userId", "name");
-      return res.json({ posts });
+
+      const postsWithAcceptance = posts.map((post) => {
+        const postObject = post.toObject();
+        return {
+          ...postObject,
+          acceptedByMe: post.respondersAccepted?.some((id) => id.equals(profile._id)) || false,
+        };
+      });
+
+      return res.json({ posts: postsWithAcceptance });
     } catch (error) {
       console.error("Emergency received history error:", error);
       return res.status(500).json({ error: "Failed to load received requests" });
@@ -261,7 +270,7 @@ export function createEmergencyRouter({
 
       const messages = await Message.find({ postId: post._id })
         .sort({ createdAt: 1 })
-        .populate("senderId", "name");
+        .populate("senderId", "name email");
       return res.json({ messages });
     } catch (error) {
       console.error("Emergency message history error:", error);

@@ -23,6 +23,7 @@ export function EmergencyProvider({ children }) {
           textSnippet: post.text,
           mediaThumbnail: post.mediaUrls?.[0] || null,
           distanceMeters: null,
+          acceptedByMe: Boolean(post.acceptedByMe),
         })));
       })
       .catch(() => setAlerts([]))
