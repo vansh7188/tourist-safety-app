@@ -12,6 +12,13 @@ function EmergencyChat() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const currentUserEmail = (localStorage.getItem("email") || "").trim().toLowerCase();
+
+  const isMyMessage = (message) => {
+    const sender = message?.senderId;
+    if (!sender || typeof sender !== "object") return false;
+    return String(sender.email || "").trim().toLowerCase() === currentUserEmail;
+  };
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -65,14 +72,17 @@ function EmergencyChat() {
         <div className="flex-1 overflow-y-auto py-4">
           {loading && <p className="text-sm text-slate-500">Loading conversation...</p>}
           {!loading && !messages.length && <p className="text-sm text-slate-500">No messages yet. Send a message to coordinate help.</p>}
-          {messages.map((message) => (
-            <div key={message._id || `${message.createdAt}-${message.text}`} className="mb-3 flex justify-start">
-              <div className="max-w-[80%] rounded-2xl bg-sky-50 px-4 py-3 text-sm leading-relaxed text-slate-900">
-                {message.senderId?.name && <p className="mb-1 text-xs font-bold text-sky-700">{message.senderId.name}</p>}
-                {message.text}
+          {messages.map((message) => {
+            const mine = isMyMessage(message);
+            return (
+              <div key={message._id || `${message.createdAt}-${message.text}`} className={`mb-3 flex ${mine ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${mine ? "rounded-br-sm bg-emerald-600 text-white" : "rounded-bl-sm bg-sky-50 text-slate-900"}`}>
+                  {!mine && message.senderId?.name && <p className="mb-1 text-xs font-bold text-sky-700">{message.senderId.name}</p>}
+                  {message.text}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         {error && <p className="mb-3 text-sm font-semibold text-rose-600">{error}</p>}
         <form onSubmit={sendMessage} className="flex gap-3 border-t border-slate-200 pt-4">
