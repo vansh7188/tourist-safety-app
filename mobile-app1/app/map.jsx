@@ -3,9 +3,11 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function MapScreen() {
-  const { user } = useAuth();
+  const { user, hydrating } = useAuth();
+  if (hydrating) return <LoadingSpinner />;
   if (!user) return <Redirect href="/login" />;
   return (
     <View style={styles.container}>

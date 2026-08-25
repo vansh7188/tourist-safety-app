@@ -46,6 +46,9 @@ export default function Layout() {
           <Tabs.Screen name="index" options={{ title: 'Safety', tabBarIcon: ({ color, size }) => <Ionicons name="shield-checkmark" size={size} color={color} /> }} />
           <Tabs.Screen name="assistant" options={{ title: 'Assistant', tabBarIcon: ({ color, size }) => <Ionicons name="chatbox-ellipses" size={size} color={color} /> }} />
           <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color} /> }} />
+          <Tabs.Screen name="emergency" options={{ title: 'SOS Network', tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} /> }} />
+          <Tabs.Screen name="login" options={{ href: null }} />
+          <Tabs.Screen name="map" options={{ href: null }} />
         </Tabs>
 
         {!isAppReady && (

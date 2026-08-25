@@ -10,6 +10,21 @@
       "resizeMode": "contain",
       "backgroundColor": "#001F3F"
     },
-    "platforms": ["ios", "android", "web"]
+    "platforms": ["ios", "android", "web"],
+    "ios": {
+      "infoPlist": {
+        "NSCameraUsageDescription": "TravelGuard uses your camera to capture evidence during panic alerts.",
+        "NSMicrophoneUsageDescription": "TravelGuard uses your microphone for voice emergency commands.",
+        "NSLocationWhenInUseUsageDescription": "TravelGuard uses your location to share emergency coordinates."
+      }
+    },
+    "android": {
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO"
+      ]
+    }
   }
 }

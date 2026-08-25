@@ -10,6 +10,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import { GoogleGenAI } from "@google/genai";
+import twilio from "twilio";
+import nodemailer from "nodemailer";
 
 import { Profile } from "./models/Profile.js";
 import {
@@ -799,6 +801,157 @@ app.get("/api/alerts", async (req, res) => {
     .filter((alert) => alert.distanceKm <= radiusKm);
 
   return res.json({ alerts: filtered });
+});
+
+// ----------------- Profile GET Route (Protected) -----------------
+app.get("/profile", authMiddleware, async (req, res) => {
+  try {
+    const email = req.user.email;
+    const profile = await Profile.findOne({ email });
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+    return res.status(200).json(profile);
+  } catch (err) {
+    console.error("Get profile error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ----------------- OTP Verification Routes -----------------
+app.post("/send-email-otp", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+  try {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Find or create profile
+    let profile = await Profile.findOne({ email });
+    if (!profile) {
+      profile = new Profile({
+        email,
+        name: email.split("@")[0],
+        contact: "0000000000",
+      });
+    }
+    profile.otpEmail = otp;
+    await profile.save();
+
+    console.log(`[OTP EMAIL] Verification code for ${email} is ${otp}`);
+
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 587),
+        secure: String(process.env.SMTP_SECURE || "false").toLowerCase() === "true",
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: email,
+        subject: "TravelGuard AI - Email Verification",
+        text: `Your email verification OTP code is ${otp}. It is valid for 10 minutes.`,
+      });
+    }
+
+    return res.status(200).json({ message: "OTP sent to email" });
+  } catch (error) {
+    console.error("Error sending email OTP:", error);
+    return res.status(500).json({ error: "Failed to send OTP" });
+  }
+});
+
+app.post("/verify-email-otp", async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ error: "Email and OTP are required" });
+  }
+  try {
+    const profile = await Profile.findOne({ email });
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+    if (profile.otpEmail === otp) {
+      profile.emailVerified = true;
+      profile.otpEmail = undefined;
+      await profile.save();
+      return res.status(200).json({ message: "Email verified!" });
+    } else {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+  } catch (error) {
+    console.error("Error verifying email OTP:", error);
+    return res.status(500).json({ error: "Failed to verify OTP" });
+  }
+});
+
+app.post("/send-contact-otp", async (req, res) => {
+  const { email, contact } = req.body;
+  if (!email || !contact) {
+    return res.status(400).json({ error: "Email and Contact number are required" });
+  }
+  try {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    let profile = await Profile.findOne({ email });
+    if (!profile) {
+      profile = new Profile({
+        email,
+        name: email.split("@")[0],
+        contact: contact,
+      });
+    } else {
+      profile.contact = contact;
+    }
+    profile.otpContact = otp;
+    await profile.save();
+
+    console.log(`[OTP CONTACT] Verification code for ${contact} is ${otp}`);
+
+    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+      const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+      const twilioFrom = process.env.TWILIO_FROM_NUMBER || "";
+      await client.messages.create({
+        body: `Your TravelGuard AI contact verification OTP is ${otp}.`,
+        from: twilioFrom,
+        to: contact,
+      });
+    }
+
+    return res.status(200).json({ message: "OTP sent to contact" });
+  } catch (error) {
+    console.error("Error sending contact OTP:", error);
+    return res.status(500).json({ error: "Failed to send OTP" });
+  }
+});
+
+app.post("/verify-contact-otp", async (req, res) => {
+  const { email, contact, otp } = req.body;
+  if (!email || !contact || !otp) {
+    return res.status(400).json({ error: "Email, Contact and OTP are required" });
+  }
+  try {
+    const profile = await Profile.findOne({ email });
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+    if (profile.otpContact === otp) {
+      profile.contactVerified = true;
+      profile.otpContact = undefined;
+      await profile.save();
+      return res.status(200).json({ message: "Contact verified!" });
+    } else {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+  } catch (error) {
+    console.error("Error verifying contact OTP:", error);
+    return res.status(500).json({ error: "Failed to verify OTP" });
+  }
 });
 
 // ----------------- Start Server -----------------
