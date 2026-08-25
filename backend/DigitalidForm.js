@@ -336,8 +336,40 @@ router.post("/panic", async (req, res) => {
     console.log("🚨 [PANIC ENDPOINT] Received panic request from:", req.user?.email || req.body.email);
     console.log("🚨 [PANIC ENDPOINT] Request body:", JSON.stringify(req.body, null, 2));
     
-    const panicData = { ...req.body, email: req.user?.email || req.body.email };
+    const userEmail = req.user?.email || req.body.email;
+    const panicData = { ...req.body, email: userEmail };
     delete panicData.panic_photos;
+
+    // Enrich panicData with Digital ID details from the database if they exist
+    if (userEmail) {
+      try {
+        const digitalId = await DigitalId.findOne({ email: userEmail });
+        if (digitalId) {
+          panicData.name = req.body.name || digitalId.name;
+          panicData.contact_number = req.body.contact_number || digitalId.contactInfo;
+          
+          if (!req.body.emergency_contacts || req.body.emergency_contacts.length === 0) {
+            panicData.emergency_contacts = (digitalId.emergencyContacts || []).map(c => ({
+              name: c.name,
+              phone: c.contact, // map "contact" to "phone"
+              relation: c.relation
+            }));
+          }
+          
+          if (!req.body.kyc) {
+            panicData.kyc = {
+              aadhaar: { number: digitalId.kyc === "aadhaar" ? digitalId.aadhaarNumber : null },
+              passport: { 
+                number: digitalId.kyc === "passport" ? digitalId.passportNumber : null,
+                country: digitalId.kyc === "passport" ? digitalId.passportCountry : null
+              }
+            };
+          }
+        }
+      } catch (err) {
+        console.error("🚨 [PANIC ENDPOINT] Error looking up DigitalId:", err);
+      }
+    }
 
     const digitalIdSnapshot = {
       name: panicData.name || "",

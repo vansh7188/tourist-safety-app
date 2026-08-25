@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { Redirect } from 'expo-router';
 import Logo from '../components/Logo';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
-  if (!user) return null;
+  if (!user) return <Redirect href="/login" />;
   return (
     <View style={styles.container}>
       <View style={styles.header}><Logo size={48} /><Text style={styles.title}>TravelGuard AI</Text></View>
