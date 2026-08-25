@@ -3,7 +3,7 @@
     "name": "TravelGuard AI",
     "slug": "travelguard-ai",
     "version": "1.0.0",
-    "sdkVersion": "54.0.0",
+    "scheme": "travelguard-ai",
     "platforms": ["ios", "android", "web"]
   }
 }
