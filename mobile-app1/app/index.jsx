@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Alert, Dimensions, TouchableOpacity } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { useRouter } from 'expo-router';
+import { Redirect } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
 import useLocation from '../hooks/useLocation';
@@ -17,15 +17,10 @@ const COLORS = {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const router = useRouter();
   const { location, requestLocation, loading: locLoading } = useLocation();
   const [markers, setMarkers] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [highCrime, setHighCrime] = useState(false);
-
-  useEffect(() => {
-    if (!user) router.push('/login');
-  }, [user]);
 
   useEffect(() => {
     // placeholder: fetch safety data from backend
@@ -59,7 +54,21 @@ export default function Dashboard() {
       const loc = await requestLocation();
       if (!loc) return Alert.alert('Location', 'Permission required');
       const { latitude, longitude } = loc.coords;
-      await api.post('/panic', { latitude, longitude, timestamp: new Date().toISOString() });
+      
+      const payload = {
+        email: user.email,
+        name: user.name || 'Anonymous User',
+        contact_number: '+919999999999', // fallback contact
+        locations: [
+          {
+            coordinates: [longitude, latitude],
+            detailed_address: 'Emergency Triggered via Mobile App'
+          }
+        ],
+        timestamp: new Date().toISOString()
+      };
+
+      await api.post('/digitalid/panic', payload);
       Alert.alert('Emergency', 'Alert sent. Help is on the way.');
     } catch (err) {
       console.error(err);
@@ -67,7 +76,7 @@ export default function Dashboard() {
     }
   };
 
-  if (!user) return null;
+  if (!user) return <Redirect href="/login" />;
 
   const { width } = Dimensions.get('window');
   const mapHeight = Math.round(width * 0.5);

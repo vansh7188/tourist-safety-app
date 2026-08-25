@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Redirect } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
 import api from '../utils/api';
@@ -17,18 +17,13 @@ function Bubble({ text, fromUser }) {
 
 export default function AssistantScreen() {
   const { user } = useAuth();
-  const router = useRouter();
   const [messages, setMessages] = useState([
     { id: 'm1', text: 'Hello! I am your Safety Assistant. Ask me anything about travel safety.', fromUser: false }
   ]);
   const [input, setInput] = useState('');
   const listRef = useRef(null);
 
-  useEffect(() => {
-    if (!user) router.push('/login');
-  }, [user]);
-
-  if (!user) return null;
+  if (!user) return <Redirect href="/login" />;
 
   const sendMessage = async () => {
     if (!input.trim()) return;

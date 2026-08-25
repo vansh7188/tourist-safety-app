@@ -4,6 +4,12 @@
     "slug": "travelguard-ai",
     "version": "1.0.0",
     "scheme": "travelguard-ai",
+    "icon": "./assets/logo.png",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#001F3F"
+    },
     "platforms": ["ios", "android", "web"]
   }
 }
