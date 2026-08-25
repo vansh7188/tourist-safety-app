@@ -49,7 +49,7 @@ function ProfileForm() {
   // Send Contact OTP
   const sendContactOTP = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/send-contact-otp`, { contact: form.contact });
+      await axios.post(`${API_BASE_URL}/send-contact-otp`, { email: form.email, contact: form.contact });
       alert("OTP sent to contact");
     } catch (err) {
       console.log(err);
@@ -59,7 +59,7 @@ function ProfileForm() {
   // Verify Contact OTP
   const verifyContactOTP = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/verify-contact-otp`, { contact: form.contact, otp: contactOTP });
+      await axios.post(`${API_BASE_URL}/verify-contact-otp`, { email: form.email, contact: form.contact, otp: contactOTP });
       alert("Contact verified!");
       setContactVerified(true);
     } catch (err) {
