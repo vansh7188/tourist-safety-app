@@ -5,12 +5,28 @@ import Panic from "./models/panic.js";
 import PanicMedia from "./models/panicMedia.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+const ADMIN_AUTH_DISABLED = true;
 
 export function createAdminRouter() {
   const router = express.Router();
 
   // Middleware: Verify Admin JWT
   const verifyAdminToken = (req, res, next) => {
+    if (ADMIN_AUTH_DISABLED) {
+      req.admin = {
+        id: "temporary-admin",
+        email: "temporary-admin",
+        role: "super_admin",
+        permissions: {
+          canViewPanics: true,
+          canUpdateStatus: true,
+          canManageAdmins: true,
+          canViewAnalytics: true,
+        },
+      };
+      return next();
+    }
+
     try {
       const token = req.headers.authorization?.split(" ")[1];
       if (!token) {

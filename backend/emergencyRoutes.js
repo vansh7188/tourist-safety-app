@@ -96,7 +96,7 @@ export function createEmergencyRouter({
 
   const emergencyPostLimiter = rateLimit({
     windowMs: 10 * 60 * 1000,
-    max: 3,
+    max: 10,
     keyGenerator: (req) => req.user?.email || ipKeyGenerator(req.ip),
     message: "Too many emergency posts. Please try again later.",
     standardHeaders: true,
@@ -186,6 +186,7 @@ export function createEmergencyRouter({
           textSnippet: text.slice(0, 200),
           mediaThumbnail: emergencyPost.mediaUrls[0] || null,
           distanceMeters: responder.distanceMeters,
+          location: emergencyPost.location,
         });
       });
       void notifyRespondersByEmail({
