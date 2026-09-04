@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import { FaMapMarkerAlt } from "react-icons/fa";
 import { useEmergency } from "../context/useEmergency";
 
-function IncomingEmergencyAlert({ inline = false, onAccepted, onOpenChat }) {
+function IncomingEmergencyAlert({ inline = false, onAccepted, onOpenChat, currentLocation }) {
   const { alerts, dismissAlert } = useEmergency() || {};
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const [acceptingPostId, setAcceptingPostId] = useState(null);
@@ -9,6 +10,20 @@ function IncomingEmergencyAlert({ inline = false, onAccepted, onOpenChat }) {
   const [error, setError] = useState("");
 
   if (!alerts?.length) return null;
+
+  const openDirections = (alert) => {
+    const [requesterLongitude, requesterLatitude] = alert.location?.coordinates || [];
+    const helperLatitude = Number(currentLocation?.latitude);
+    const helperLongitude = Number(currentLocation?.longitude);
+
+    if (![requesterLatitude, requesterLongitude, helperLatitude, helperLongitude].every(Number.isFinite)) return;
+
+    const mapsUrl = new URL("https://www.google.com/maps/dir/");
+    mapsUrl.searchParams.set("api", "1");
+    mapsUrl.searchParams.set("origin", `${helperLatitude},${helperLongitude}`);
+    mapsUrl.searchParams.set("destination", `${requesterLatitude},${requesterLongitude}`);
+    window.open(mapsUrl.toString(), "_blank", "noopener,noreferrer");
+  };
 
   const acceptEmergency = async (alert) => {
     setAcceptingPostId(alert.postId);
@@ -51,7 +66,19 @@ function IncomingEmergencyAlert({ inline = false, onAccepted, onOpenChat }) {
               <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Nearby emergency</p>
               <h2 className="mt-1 font-bold text-slate-900">{alert.requesterName || "A traveler"} needs help</h2>
             </div>
-            <button type="button" onClick={() => dismissAlert(alert.postId)} className="text-xs font-semibold text-slate-500">Ignore</button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => openDirections(alert)}
+                disabled={!Number.isFinite(Number(currentLocation?.latitude)) || !Number.isFinite(Number(currentLocation?.longitude))}
+                title="Open route in Google Maps"
+                aria-label="Open route in Google Maps"
+                className="text-lg text-amber-700 transition hover:text-amber-900 disabled:cursor-not-allowed disabled:text-slate-300"
+              >
+                <FaMapMarkerAlt />
+              </button>
+              <button type="button" onClick={() => dismissAlert(alert.postId)} className="text-xs font-semibold text-slate-500">Ignore</button>
+            </div>
           </div>
           <p className="mt-2 text-sm text-slate-700">{alert.textSnippet || "Media attached"}</p>
           <p className="mt-2 text-xs font-semibold text-slate-500">

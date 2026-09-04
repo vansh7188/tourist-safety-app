@@ -148,6 +148,7 @@ function EmergencyContent({ currentLocation, navigate }) {
                     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)]">
                       <IncomingEmergencyAlert
                         inline
+                        currentLocation={currentLocation}
                         onAccepted={(post) => {
                           upsertAcceptedReceivedPost(post);
                           setActiveReceivedChatPostId(post.postId);
@@ -224,37 +225,33 @@ function SentRequests({ posts, onOpenChat }) {
             <span>{new Date(post.createdAt).toLocaleString()}</span>
             <span>{post.respondersAccepted?.length || 0} helper(s) accepted</span>
           </div>
-          {post.respondersAccepted?.length > 0 && (
-            <>
-              <button
-                type="button"
-                onClick={() => setOpenHelpersFor((current) => current === post._id ? null : post._id)}
-                className="mt-3 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-700"
-              >
-                {openHelpersFor === post._id ? "Hide helpers" : "Open helper list"}
-              </button>
-              {openHelpersFor === post._id && (
-                <div className="mt-3 space-y-2 border-t border-slate-200 pt-3">
-                  {post.respondersAccepted.map((helper) => (
-                    <div key={helper._id || helper} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-bold text-slate-800">{helper.name || "Accepted helper"}</p>
-                        {helper.email && <p className="truncate text-[11px] text-slate-500">{helper.email}</p>}
-                      </div>
-                      {post.status === "open" && (
-                        <button
-                          type="button"
-                          onClick={() => onOpenChat(post._id)}
-                          className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700"
-                        >
-                          Open chat
-                        </button>
-                      )}
-                    </div>
-                  ))}
+          <button
+            type="button"
+            onClick={() => setOpenHelpersFor((current) => current === post._id ? null : post._id)}
+            className="mt-3 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-700"
+          >
+            {openHelpersFor === post._id ? "Hide helpers" : `Open helper list (${post.respondersAccepted?.length || 0})`}
+          </button>
+          {openHelpersFor === post._id && (
+            <div className="mt-3 space-y-2 border-t border-slate-200 pt-3">
+              {post.respondersAccepted?.length ? post.respondersAccepted.map((helper) => (
+                <div key={helper._id || helper} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-bold text-slate-800">{helper.name || "Accepted helper"}</p>
+                    {helper.email && <p className="truncate text-[11px] text-slate-500">{helper.email}</p>}
+                  </div>
+                  {post.status === "open" && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenChat(post._id)}
+                      className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700"
+                    >
+                      Open chat
+                    </button>
+                  )}
                 </div>
-              )}
-            </>
+              )) : <p className="text-xs text-slate-500">No helpers have accepted this request yet.</p>}
+            </div>
           )}
         </article>
       ))}

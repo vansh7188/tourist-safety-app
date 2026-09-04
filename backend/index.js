@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import dns from "dns";
 import { createServer } from "http";
 import express from "express";
 import cors from "cors";
@@ -10,6 +11,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import { GoogleGenAI } from "@google/genai";
+
+// Force Node.js to use Google DNS for MongoDB SRV resolution
+// Fixes local DNS servers that don't properly handle SRV records
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 import { Profile } from "./models/Profile.js";
 import {
@@ -369,12 +374,18 @@ app.use(
 app.use(bodyParser.json({ limit: "25mb" }));
 
 // ----------------- MongoDB connections -----------------
+// Use Google DNS servers for MongoDB SRV resolution (fixes local DNS issues)
+const mongoOptions = {
+  family: 4, // Force IPv4
+  // Override DNS resolution to use public DNS servers
+};
+
 mongoose
-  .connect(process.env.MONGO_URI2)
+  .connect(process.env.MONGO_URI2, mongoOptions)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err));
 
-const digitalIdConnection = mongoose.createConnection(process.env.MONGO_URI2);
+const digitalIdConnection = mongoose.createConnection(process.env.MONGO_URI2, mongoOptions);
 
 digitalIdConnection.on("connected", () => {
   console.log("✅ MongoDB (Digital ID DB) connected");
