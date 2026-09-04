@@ -24,6 +24,7 @@ export function EmergencyProvider({ children }) {
           mediaThumbnail: post.mediaUrls?.[0] || null,
           distanceMeters: null,
           acceptedByMe: Boolean(post.acceptedByMe),
+          location: post.location || null,
         })));
       })
       .catch(() => setAlerts([]))
