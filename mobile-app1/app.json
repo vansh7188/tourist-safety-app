@@ -16,9 +16,6 @@
       "web"
     ],
     "ios": {
-      "config": {
-        "googleMapsApiKey": "REMOVED_API_KEY"
-      },
       "infoPlist": {
         "NSCameraUsageDescription": "TravelGuard uses your camera to capture evidence during panic alerts.",
         "NSMicrophoneUsageDescription": "TravelGuard uses your microphone for voice emergency commands.",
@@ -27,11 +24,6 @@
     },
     "android": {
       "usesCleartextTraffic": true,
-      "config": {
-        "googleMaps": {
-          "apiKey": "REMOVED_API_KEY"
-        }
-      },
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -46,7 +38,15 @@
       }
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ]
   }
 }
