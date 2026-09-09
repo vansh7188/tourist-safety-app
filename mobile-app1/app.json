@@ -10,8 +10,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#001F3F"
     },
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "ios": {
+      "config": {
+        "googleMapsApiKey": "AIzaSyAL06POMEQZDlO8IOb4315UB0NLVfpnlgw"
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "TravelGuard uses your camera to capture evidence during panic alerts.",
         "NSMicrophoneUsageDescription": "TravelGuard uses your microphone for voice emergency commands.",
@@ -19,12 +26,26 @@
       }
     },
     "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAL06POMEQZDlO8IOb4315UB0NLVfpnlgw"
+        }
+      },
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "CAMERA",
         "RECORD_AUDIO"
-      ]
-    }
+      ],
+      "package": "com.vansh30.travelguardai"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "a72d509d-6e88-42c8-9d8d-b56deb39b5b5"
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
