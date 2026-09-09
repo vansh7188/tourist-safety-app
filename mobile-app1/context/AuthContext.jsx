@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useMemo } from '
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { AUTH_BASE_URL } from '../config';
+import api from '../utils/api';
 
 const AuthContext = createContext(null);
 
@@ -82,6 +83,22 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
   };
+
+  useEffect(() => {
+    const responseInterceptor = api.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (error.response && error.response.status === 401) {
+          await logout();
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      api.interceptors.response.eject(responseInterceptor);
+    };
+  }, []);
 
   const value = useMemo(
     () => ({ user, token, hydrating, login, signup, logout }),
