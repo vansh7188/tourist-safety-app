@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import { Redirect } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
@@ -16,15 +16,23 @@ const DEFAULT_REGION = {
 
 export default function MapScreen() {
   const { user, hydrating } = useAuth();
-  const { location, error, loading, requestLocation } = useLocation();
+  const {
+    location,
+    error,
+    loading,
+    isWatching,
+    startWatching,
+    stopWatching,
+    setManualLocation,
+  } = useLocation();
   const [mapReady, setMapReady] = useState(false);
+  const mapRef = useRef(null);
 
   useEffect(() => {
-    if (user) requestLocation();
+    if (!user) return undefined;
+    startWatching();
+    return stopWatching;
   }, [user]);
-
-  if (hydrating) return <LoadingSpinner />;
-  if (!user) return <Redirect href="/login" />;
 
   const coordinates = location?.coords;
   const region = coordinates
@@ -36,9 +44,28 @@ export default function MapScreen() {
       }
     : DEFAULT_REGION;
 
-  const recenter = async () => {
-    const nextLocation = await requestLocation();
-    if (!nextLocation) Alert.alert('Location', error || 'Unable to get your location.');
+  useEffect(() => {
+    if (!coordinates || !mapReady) return;
+    mapRef.current?.animateToRegion({
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+      latitudeDelta: 0.02,
+      longitudeDelta: 0.02,
+    });
+  }, [coordinates?.latitude, coordinates?.longitude, mapReady]);
+
+  if (hydrating) return <LoadingSpinner />;
+  if (!user) return <Redirect href="/login" />;
+
+  const useLiveLocation = async () => {
+    const nextLocation = await startWatching();
+    if (!nextLocation) Alert.alert('Location', error || 'Unable to get your device location.');
+  };
+
+  const selectLocation = (event) => {
+    const coordinate = event.nativeEvent.coordinate;
+    setManualLocation(coordinate);
+    mapRef.current?.animateToRegion({ ...coordinate, latitudeDelta: 0.02, longitudeDelta: 0.02 });
   };
 
   return (
@@ -48,12 +75,13 @@ export default function MapScreen() {
         <Text style={styles.title}>Nearby Safe Zones</Text>
       </View>
       <MapView
-        provider={PROVIDER_GOOGLE}
+        ref={mapRef}
         style={styles.map}
         initialRegion={region}
-        showsUserLocation={Boolean(coordinates)}
+        showsUserLocation={isWatching}
         showsMyLocationButton={false}
         onMapReady={() => setMapReady(true)}
+        onPress={selectLocation}
       >
         {coordinates && (
           <Marker
@@ -63,15 +91,19 @@ export default function MapScreen() {
         )}
       </MapView>
       <View style={styles.status}>
-        {!mapReady && <Text style={styles.note}>Loading Google Maps...</Text>}
-        {mapReady && loading && <Text style={styles.note}>Finding your location...</Text>}
+        {!mapReady && <Text style={styles.note}>Loading map...</Text>}
+        {mapReady && loading && <Text style={styles.note}>Finding your device location...</Text>}
+        {mapReady && !loading && isWatching && <Text style={styles.note}>Live device location enabled.</Text>}
+        {mapReady && !loading && !isWatching && coordinates?.source === 'manual' && (
+          <Text style={styles.note}>Manual location selected. Tap the map to move it.</Text>
+        )}
         {mapReady && !loading && !coordinates && (
-          <Text style={styles.note}>Location is unavailable. The map is still usable.</Text>
+          <Text style={styles.note}>Tap the map to select a location manually.</Text>
         )}
         {error && <Text style={styles.error}>{error}</Text>}
       </View>
-      <TouchableOpacity style={styles.recenter} onPress={recenter} disabled={loading}>
-        <Text style={styles.recenterText}>{loading ? 'Locating...' : 'Use my location'}</Text>
+      <TouchableOpacity style={styles.recenter} onPress={useLiveLocation} disabled={loading}>
+        <Text style={styles.recenterText}>{loading ? 'Locating...' : 'Use live location'}</Text>
       </TouchableOpacity>
     </View>
   );

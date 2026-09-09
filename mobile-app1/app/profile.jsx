@@ -18,6 +18,7 @@ import Logo from '../components/Logo';
 import api from '../utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 
 const { width } = Dimensions.get('window');
 const COLORS = {
@@ -59,8 +60,10 @@ export default function ProfileScreen() {
   const [digitalId, setDigitalId] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [digitalIdForm, setDigitalIdForm] = useState({
+    digitalIdNumber: '',
     email: '',
     name: '',
+    profileImage: null,
     contactInfo: '',
     kyc: 'aadhaar',
     aadhaarNumber: '',
@@ -114,8 +117,10 @@ export default function ProfileScreen() {
         setDigitalId(idData);
         if (idData) {
           setDigitalIdForm({
+            digitalIdNumber: idData.digitalIdNumber || '',
             email: idData.email || user.email,
             name: idData.name || '',
+            profileImage: idData.profileImage || null,
             contactInfo: idData.contactInfo || '',
             kyc: idData.kyc || 'aadhaar',
             aadhaarNumber: idData.aadhaarNumber || '',
@@ -248,6 +253,28 @@ export default function ProfileScreen() {
   };
 
   // Digital ID Actions
+  const chooseDigitalIdImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      return Alert.alert('Photo Permission', 'Photo access is required to add your Digital ID image.');
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+
+    const asset = result.assets?.[0];
+    if (result.canceled || !asset?.base64) return;
+    setDigitalIdForm((prev) => ({
+      ...prev,
+      profileImage: `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`,
+    }));
+  };
+
   const handleSaveDigitalId = async () => {
     // Validations
     if (!digitalIdForm.name.trim()) return Alert.alert('Error', 'Digital ID Name is required');
@@ -574,7 +601,11 @@ export default function ProfileScreen() {
                 {/* Visual Identity Badge Card */}
                 <View style={styles.idCard}>
                   <View style={styles.idCardHeader}>
-                    <Logo size={32} />
+                    {digitalId.profileImage ? (
+                      <Image source={{ uri: digitalId.profileImage }} style={styles.idCardPhoto} />
+                    ) : (
+                      <Logo size={32} />
+                    )}
                     <View>
                       <Text style={styles.idCardHeaderTitle}>TRAVELGUARD SECURITY ID</Text>
                       <Text style={styles.idCardHeaderSub}>DEPT. OF DIGITAL SAFETY</Text>
@@ -584,6 +615,8 @@ export default function ProfileScreen() {
                   
                   <View style={styles.idCardBody}>
                     <View style={styles.idCardFields}>
+                      <Text style={styles.idCardLabel}>DIGITAL ID NUMBER</Text>
+                      <Text style={styles.idCardValue}>{digitalId.digitalIdNumber}</Text>
                       <Text style={styles.idCardLabel}>NAME</Text>
                       <Text style={styles.idCardValue}>{digitalId.name}</Text>
 
@@ -639,6 +672,17 @@ export default function ProfileScreen() {
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>{digitalId ? 'Edit Digital ID' : 'Register Digital ID'}</Text>
                 <Text style={styles.subtitle}>Setup secure identity credentials to link emergency alerts.</Text>
+
+                <TouchableOpacity style={styles.photoPicker} onPress={chooseDigitalIdImage}>
+                  {digitalIdForm.profileImage ? (
+                    <Image source={{ uri: digitalIdForm.profileImage }} style={styles.profilePhotoPreview} />
+                  ) : (
+                    <Ionicons name="person-add-outline" size={30} color={COLORS.navy} />
+                  )}
+                  <Text style={styles.photoPickerText}>
+                    {digitalIdForm.profileImage ? 'Change Digital ID photo' : 'Add your Digital ID photo'}
+                  </Text>
+                </TouchableOpacity>
 
                 <View style={styles.formGroup}>
                   <Text style={styles.label}>KYC Full Name</Text>
@@ -957,6 +1001,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   idCardHeader: { flexDirection: 'row', alignItems: 'center' },
+  idCardPhoto: { width: 42, height: 42, borderRadius: 21, borderWidth: 2, borderColor: COLORS.teal },
   idCardHeaderTitle: { color: '#fff', fontSize: 14, fontWeight: '900', marginLeft: 10, letterSpacing: 0.5 },
   idCardHeaderSub: { color: COLORS.teal, fontSize: 10, fontWeight: '700', marginLeft: 10 },
   idCardDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginVertical: 12 },
@@ -964,6 +1009,9 @@ const styles = StyleSheet.create({
   idCardFields: { flex: 1 },
   idCardLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '700', marginTop: 6 },
   idCardValue: { color: '#fff', fontSize: 13, fontWeight: '800', marginTop: 2 },
+  photoPicker: { borderWidth: 1, borderColor: COLORS.border, borderStyle: 'dashed', borderRadius: 10, padding: 12, alignItems: 'center', marginBottom: 16, backgroundColor: '#F8FAFC' },
+  profilePhotoPreview: { width: 76, height: 76, borderRadius: 38, marginBottom: 8 },
+  photoPickerText: { color: COLORS.navy, fontWeight: '700' },
   idCardStatusContainer: { justifyContent: 'flex-end', alignItems: 'flex-end' },
   statusPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(46,125,50,0.2)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
   statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.emerald, marginRight: 6 },

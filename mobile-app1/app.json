@@ -26,6 +26,7 @@
       }
     },
     "android": {
+      "usesCleartextTraffic": true,
       "config": {
         "googleMaps": {
           "apiKey": "REMOVED_API_KEY"

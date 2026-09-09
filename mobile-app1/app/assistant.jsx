@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Redirect } from 'expo-router';
+import Constants from 'expo-constants';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
 import api from '../utils/api';
@@ -8,12 +9,14 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 let ExpoSpeechRecognitionModule = null;
 let useSpeechRecognitionEvent = () => {};
-try {
-  const SpeechRecognition = require('expo-speech-recognition');
-  ExpoSpeechRecognitionModule = SpeechRecognition.ExpoSpeechRecognitionModule;
-  useSpeechRecognitionEvent = SpeechRecognition.useSpeechRecognitionEvent;
-} catch (err) {
-  console.log('expo-speech-recognition module not loaded natively (Expo Go):', err.message);
+if (Constants.appOwnership !== 'expo') {
+  try {
+    const SpeechRecognition = require('expo-speech-recognition');
+    ExpoSpeechRecognitionModule = SpeechRecognition.ExpoSpeechRecognitionModule;
+    useSpeechRecognitionEvent = SpeechRecognition.useSpeechRecognitionEvent;
+  } catch (err) {
+    console.warn('Speech recognition is unavailable in this native build:', err.message);
+  }
 }
 
 const COLORS = { navy: '#001F3F', teal: '#39CCCC', bg: '#F4F6F6' };
