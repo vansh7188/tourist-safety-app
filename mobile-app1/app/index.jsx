@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Alert, Dimensions, TouchableOpacity, TextInput } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { Redirect } from 'expo-router';
+import { View, Text, StyleSheet, Alert, TouchableOpacity, TextInput, Image } from 'react-native';
+import { Redirect, useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
 import useLocation from '../hooks/useLocation';
@@ -12,12 +12,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let ExpoSpeechRecognitionModule = null;
 let useSpeechRecognitionEvent = () => {};
-try {
-  const SpeechRecognition = require('expo-speech-recognition');
-  ExpoSpeechRecognitionModule = SpeechRecognition.ExpoSpeechRecognitionModule;
-  useSpeechRecognitionEvent = SpeechRecognition.useSpeechRecognitionEvent;
-} catch (err) {
-  console.log('expo-speech-recognition module not loaded natively (Expo Go):', err.message);
+if (Constants.appOwnership !== 'expo') {
+  try {
+    const SpeechRecognition = require('expo-speech-recognition');
+    ExpoSpeechRecognitionModule = SpeechRecognition.ExpoSpeechRecognitionModule;
+    useSpeechRecognitionEvent = SpeechRecognition.useSpeechRecognitionEvent;
+  } catch (err) {
+    console.warn('Speech recognition is unavailable in this native build:', err.message);
+  }
 }
 
 const COLORS = {
@@ -29,8 +31,8 @@ const COLORS = {
 
 export default function Dashboard() {
   const { user, hydrating } = useAuth();
-  const { location, requestLocation, loading: locLoading } = useLocation();
-  const [markers, setMarkers] = useState([]);
+  const router = useRouter();
+  const { requestLocation, loading: locLoading } = useLocation();
   const [alerts, setAlerts] = useState([]);
   const [highCrime, setHighCrime] = useState(false);
   const [panicQuery, setPanicQuery] = useState('');
@@ -45,12 +47,8 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         // const res = await api.get('/safety/nearby');
-        // setMarkers(res.data.markers);
         // setAlerts(res.data.alerts);
         // stub data
-        setMarkers([
-          { id: 'p1', latitude: 37.78825, longitude: -122.4324, title: 'Police Station' },
-        ]);
         setAlerts([
           { id: 'a1', severity: 'High', text: 'Robbery reported', distance: 0.02, rating: 4.2 },
         ]);
@@ -61,11 +59,6 @@ export default function Dashboard() {
     };
     fetchData();
   }, []);
-
-  const handleRecenter = async () => {
-    const loc = await requestLocation();
-    if (!loc) Alert.alert('Location', 'Unable to get location.');
-  };
 
   const voiceAvailable = useMemo(
     () => ExpoSpeechRecognitionModule && ExpoSpeechRecognitionModule.isRecognitionAvailable,
@@ -353,9 +346,6 @@ export default function Dashboard() {
   if (hydrating) return <LoadingSpinner />;
   if (!user) return <Redirect href="/login" />;
 
-  const { width } = Dimensions.get('window');
-  const mapHeight = Math.round(width * 0.5);
-
   return (
     <View style={[styles.container, { backgroundColor: COLORS.bg }]}> 
       <View style={[styles.header, { backgroundColor: COLORS.navy }]}> 
@@ -375,24 +365,41 @@ export default function Dashboard() {
         </View>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Live Safety Map</Text>
-        <MapView
-          provider={PROVIDER_GOOGLE}
-          style={{ width: '100%', height: mapHeight, borderRadius: 12 }}
-          initialRegion={{
-            latitude: location?.coords?.latitude || 37.78825,
-            longitude: location?.coords?.longitude || -122.4324,
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
-          }}
-        >
-          {markers.map((m) => (
-            <Marker key={m.id} coordinate={{ latitude: m.latitude, longitude: m.longitude }} title={m.title} />
-          ))}
-        </MapView>
-        <TouchableOpacity style={styles.recenter} onPress={handleRecenter}><Text style={styles.recenterText}>Re-center</Text></TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.card} onPress={() => router.push('/profile')} activeOpacity={0.9}>
+        <View style={styles.digitalIdHeader}>
+          <Logo size={30} />
+          <View style={styles.digitalIdHeading}>
+            <Text style={styles.cardTitle}>Digital ID</Text>
+            <Text style={styles.digitalIdStatus}>{digitalId ? 'ACTIVE' : 'NOT REGISTERED'}</Text>
+          </View>
+        </View>
+        {digitalId ? (
+          <View style={styles.digitalIdBody}>
+            {digitalId.profileImage ? (
+              <Image source={{ uri: digitalId.profileImage }} style={styles.digitalIdImage} />
+            ) : null}
+            <View style={styles.digitalIdField}>
+              <Text style={styles.digitalIdLabel}>ID NUMBER</Text>
+              <Text style={styles.digitalIdValue}>{digitalId.digitalIdNumber}</Text>
+            </View>
+            <View style={styles.digitalIdField}>
+              <Text style={styles.digitalIdLabel}>NAME</Text>
+              <Text style={styles.digitalIdValue}>{digitalId.name}</Text>
+            </View>
+            <View style={styles.digitalIdField}>
+              <Text style={styles.digitalIdLabel}>CONTACT</Text>
+              <Text style={styles.digitalIdValue}>{digitalId.contactInfo}</Text>
+            </View>
+            <View style={styles.digitalIdField}>
+              <Text style={styles.digitalIdLabel}>KYC</Text>
+              <Text style={styles.digitalIdValue}>{digitalId.kyc?.toUpperCase()}</Text>
+            </View>
+          </View>
+        ) : (
+          <Text style={styles.digitalIdPrompt}>Create your Digital ID to keep emergency details ready.</Text>
+        )}
+        <Text style={styles.digitalIdAction}>{digitalId ? 'Open Digital ID' : 'Set up Digital ID'}  ›</Text>
+      </TouchableOpacity>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Smart Area Alerts</Text>
@@ -450,8 +457,16 @@ const styles = StyleSheet.create({
   alertText: { color: '#fff', fontWeight: '800', fontSize: 12 },
   card: { margin: 12, backgroundColor: '#fff', borderRadius: 12, padding: 12, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 4 },
   cardTitle: { fontWeight: '800', fontSize: 16, marginBottom: 8 },
-  recenter: { position: 'absolute', right: 16, bottom: 16, backgroundColor: '#fff', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#eee' },
-  recenterText: { fontWeight: '700' },
+  digitalIdHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  digitalIdHeading: { marginLeft: 10, flex: 1 },
+  digitalIdStatus: { color: '#0a6f64', fontSize: 11, fontWeight: '800', marginTop: 2 },
+  digitalIdBody: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#e8eef3', paddingTop: 10 },
+  digitalIdImage: { width: 48, height: 48, borderRadius: 24, marginRight: 10, borderWidth: 2, borderColor: '#39CCCC' },
+  digitalIdField: { flex: 1 },
+  digitalIdLabel: { color: '#718096', fontSize: 10, fontWeight: '800', marginBottom: 3 },
+  digitalIdValue: { color: '#1f2937', fontWeight: '700' },
+  digitalIdPrompt: { color: '#52616b', marginBottom: 10 },
+  digitalIdAction: { color: '#001F3F', fontWeight: '800', marginTop: 12 },
   alertRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f0f2f4' },
   severity: { width: 12, height: 12, borderRadius: 6, marginRight: 12 },
   alertTitle: { fontWeight: '700' },

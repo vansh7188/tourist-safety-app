@@ -26,6 +26,7 @@
       }
     },
     "android": {
+      "usesCleartextTraffic": true,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyAL06POMEQZDlO8IOb4315UB0NLVfpnlgw"
