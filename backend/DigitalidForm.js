@@ -35,6 +35,12 @@ const emergencyContactSchema = new mongoose.Schema({
 });
 
 const digitalIdSchema = new mongoose.Schema({
+  digitalIdNumber: {
+    type: String,
+    required: true,
+    unique: true,
+    match: /^\d{6}$/,
+  },
   email: {
   type: String,
   required: true,
@@ -45,6 +51,10 @@ const digitalIdSchema = new mongoose.Schema({
     type: String,
     required: [true, "Full name is required"],
     match: [/^[A-Za-z\s]+$/, "Name must contain only letters"],
+  },
+  profileImage: {
+    type: String,
+    default: null,
   },
   contactInfo: {
     type: String,
@@ -178,7 +188,15 @@ export function createDigitalIdRouter(DigitalId) {
 
   router.post("/digital-id", async (req, res) => {
     try {
-      const newId = new DigitalId(req.body);
+      let digitalIdNumber;
+      do {
+        digitalIdNumber = String(Math.floor(100000 + Math.random() * 900000));
+      } while (await DigitalId.exists({ digitalIdNumber }));
+
+      const newId = new DigitalId({
+        ...req.body,
+        digitalIdNumber,
+      });
       await newId.save();
       await syncProfileLocation(newId);
       res.status(201).json({ message: "✅ Digital ID saved", data: newId });
@@ -209,9 +227,11 @@ export function createDigitalIdRouter(DigitalId) {
         return res.status(400).json({ error: "Email is required to update digital ID" });
       }
 
+      const existing = await DigitalId.findOne({ email });
+      const digitalIdNumber = existing?.digitalIdNumber || String(Math.floor(100000 + Math.random() * 900000));
       const updated = await DigitalId.findOneAndUpdate(
         { email },
-        { ...req.body, email },
+        { ...req.body, email, digitalIdNumber },
         { new: true, runValidators: true }
       );
 
@@ -336,8 +356,40 @@ router.post("/panic", async (req, res) => {
     console.log("🚨 [PANIC ENDPOINT] Received panic request from:", req.user?.email || req.body.email);
     console.log("🚨 [PANIC ENDPOINT] Request body:", JSON.stringify(req.body, null, 2));
     
-    const panicData = { ...req.body, email: req.user?.email || req.body.email };
+    const userEmail = req.user?.email || req.body.email;
+    const panicData = { ...req.body, email: userEmail };
     delete panicData.panic_photos;
+
+    // Enrich panicData with Digital ID details from the database if they exist
+    if (userEmail) {
+      try {
+        const digitalId = await DigitalId.findOne({ email: userEmail });
+        if (digitalId) {
+          panicData.name = req.body.name || digitalId.name;
+          panicData.contact_number = req.body.contact_number || digitalId.contactInfo;
+          
+          if (!req.body.emergency_contacts || req.body.emergency_contacts.length === 0) {
+            panicData.emergency_contacts = (digitalId.emergencyContacts || []).map(c => ({
+              name: c.name,
+              phone: c.contact, // map "contact" to "phone"
+              relation: c.relation
+            }));
+          }
+          
+          if (!req.body.kyc) {
+            panicData.kyc = {
+              aadhaar: { number: digitalId.kyc === "aadhaar" ? digitalId.aadhaarNumber : null },
+              passport: { 
+                number: digitalId.kyc === "passport" ? digitalId.passportNumber : null,
+                country: digitalId.kyc === "passport" ? digitalId.passportCountry : null
+              }
+            };
+          }
+        }
+      } catch (err) {
+        console.error("🚨 [PANIC ENDPOINT] Error looking up DigitalId:", err);
+      }
+    }
 
     const digitalIdSnapshot = {
       name: panicData.name || "",

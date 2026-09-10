@@ -7,27 +7,43 @@ import Logo from '../components/Logo';
 const COLORS = { navy: '#001F3F', teal: '#39CCCC', bg: '#F4F6F6' };
 
 export default function LoginScreen() {
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { login, signup } = useAuth();
   const router = useRouter();
 
   const handleLogin = async () => {
+    if (loading) return;
+
     if (!email || !password) {
       Alert.alert('Validation', 'Please enter email and password');
       return;
     }
-    try {
-      await login({ email, password });
-      router.replace('/');
-    } catch (err) {
-      Alert.alert('Login failed', err?.message || 'Unable to login');
-    }
-  };
 
-  const handleCreate = () => {
-    // stub for account creation flow
-    Alert.alert('Create Account', 'Account creation placeholder');
+    if (password.length < 6) {
+      Alert.alert('Validation', 'Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (isSignUp) {
+        await signup({ email, password });
+        Alert.alert('Signup successful', 'Please login with your new account.');
+        setIsSignUp(false);
+        setPassword('');
+      } else {
+        await login({ email, password });
+        router.replace('/');
+      }
+    } catch (err) {
+      const message = err?.response?.data?.error || err?.message || 'Unable to continue';
+      Alert.alert(isSignUp ? 'Signup failed' : 'Login failed', message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,10 +67,15 @@ export default function LoginScreen() {
           secureTextEntry
         />
         <TouchableOpacity style={[styles.loginButton, { backgroundColor: COLORS.navy }]} onPress={handleLogin}>
-          <Text style={styles.loginText}>Log In</Text>
+          <Text style={styles.loginText}>{loading ? 'Please wait...' : isSignUp ? 'Sign Up' : 'Log In'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.createButton, { borderColor: COLORS.navy }]} onPress={handleCreate}>
-          <Text style={[styles.createText, { color: COLORS.navy }]}>Create Account</Text>
+        <TouchableOpacity
+          style={[styles.createButton, { borderColor: COLORS.navy }]}
+          onPress={() => setIsSignUp((prev) => !prev)}
+        >
+          <Text style={[styles.createText, { color: COLORS.navy }]}>
+            {isSignUp ? 'Already have an account? Log In' : 'Create Account'}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Password reset placeholder')}>
           <Text style={styles.forgot}>Forgot Password?</Text>

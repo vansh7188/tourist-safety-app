@@ -3,7 +3,50 @@
     "name": "TravelGuard AI",
     "slug": "travelguard-ai",
     "version": "1.0.0",
-    "sdkVersion": "54.0.0",
-    "platforms": ["ios", "android", "web"]
+    "scheme": "travelguard-ai",
+    "icon": "./assets/logo.png",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#001F3F"
+    },
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "ios": {
+      "infoPlist": {
+        "NSCameraUsageDescription": "TravelGuard uses your camera to capture evidence during panic alerts.",
+        "NSMicrophoneUsageDescription": "TravelGuard uses your microphone for voice emergency commands.",
+        "NSLocationWhenInUseUsageDescription": "TravelGuard uses your location to share emergency coordinates."
+      }
+    },
+    "android": {
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO"
+      ],
+      "package": "com.vansh30.travelguardai"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "a72d509d-6e88-42c8-9d8d-b56deb39b5b5"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ]
   }
 }
