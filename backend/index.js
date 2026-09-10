@@ -45,47 +45,77 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+const GEMINI_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-pro",
+  "gemini-2.0-flash-exp",
+];
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
-const generateGeminiText = async (prompt) => {
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const generateGeminiText = async (prompt, { maxRetries = 2 } = {}) => {
   let lastError = null;
 
   for (const model of GEMINI_MODELS) {
-    try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: prompt,
-      });
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+        });
 
-      const text =
-        response.text ||
-        response.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "";
+        const text =
+          response.text ||
+          response.candidates?.[0]?.content?.parts?.[0]?.text ||
+          "";
 
-      if (text) {
-        return { text, model };
+        if (text) {
+          return { text, model };
+        }
+      } catch (error) {
+        lastError = error;
+        const message = error?.message || "";
+        const status = error?.status || 0;
+
+        // Rate limit (429) — retry or try next model
+        if (status === 429 || message.includes("429") || message.includes("RESOURCE_EXHAUSTED")) {
+          const isQuotaExhausted = message.includes("quota") || message.includes("Quota exceeded");
+
+          if (isQuotaExhausted) {
+            console.warn(`Gemini model ${model} quota exceeded — trying next available model`);
+            break; // Try next model in list
+          }
+
+          // Transient rate limit — retry with backoff
+          const retryMatch = message.match(/retry\s+in\s+([\d.]+)s/i);
+          const waitSec = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 5 * (attempt + 1);
+          if (attempt < maxRetries) {
+            console.warn(`Gemini ${model} rate-limited. Retrying in ${waitSec}s (attempt ${attempt + 1}/${maxRetries})…`);
+            await sleep(waitSec * 1000);
+            continue;
+          }
+          console.warn(`Gemini ${model} rate-limited after ${maxRetries} retries — trying next model`);
+          break; // next model
+        }
+
+        // Non-retryable model issue — try next model immediately
+        if (
+          message.includes("permission") ||
+          message.includes("not enabled") ||
+          message.includes("API key") ||
+          message.includes("model")
+        ) {
+          console.warn(`Gemini model ${model} unavailable:`, message);
+          break; // next model
+        }
+
+        throw error;
       }
-    } catch (error) {
-      lastError = error;
-      const message = error?.message || "";
-
-      if (
-        message.includes("permission") ||
-        message.includes("not enabled") ||
-        message.includes("API key") ||
-        message.includes("model") ||
-        message.includes("429")
-      ) {
-        console.warn(`Gemini model ${model} unavailable:`, message);
-        continue;
-      }
-
-      throw error;
     }
   }
 
-  throw lastError || new Error("Gemini model unavailable");
+  throw lastError || new Error("All Gemini models unavailable");
 };
 
 const validatePlacesApiKey = async () => {
@@ -812,12 +842,6 @@ app.get("/api/alerts", async (req, res) => {
   return res.json({ alerts: filtered });
 });
 
-// ----------------- Start Server -----------------
-httpServer.listen(PORT, () => {
-  console.log(`🚀 Backend running on port ${PORT}`);
-  validatePlacesApiKey();
-});
-
 const extractJson = (text) => {
   if (!text) return null;
   const match = text.match(/\{[\s\S]*\}/);
@@ -842,47 +866,89 @@ app.get("/api/area-safety", async (req, res) => {
     return res.status(500).json({ error: "GEMINI_API_KEY missing in .env" });
   }
 
-  const prompt = `
-You are an assistant that estimates safety alerts for a tourist area.
-You DO NOT have real-time data; provide cautious, hypothetical alerts.
-Return ONLY valid JSON with this shape:
+  // Get location name via reverse geocoding
+  let locationName = `Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  try {
+    // Try Nominatim (OpenStreetMap) first - free and no API key required
+    const geocodeRes = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+      {
+        headers: {
+          "User-Agent": "TouristSafetyApp/1.0",
+        },
+      }
+    );
+
+    if (geocodeRes.ok) {
+      const geocodeData = await geocodeRes.json();
+      const address = geocodeData.address || {};
+      const parts = [
+        address.neighbourhood || address.suburb || address.hamlet,
+        address.city || address.town || address.village,
+        address.state,
+        address.country
+      ].filter(Boolean);
+
+      if (parts.length > 0) {
+        locationName = parts.join(", ");
+      }
+    }
+  } catch (err) {
+    console.warn("Reverse geocoding failed:", err.message);
+  }
+
+  const prompt = `You are a local safety advisor providing area-specific safety information for tourists.
+
+Location: ${locationName}
+Coordinates: ${lat}, ${lng}
+Search radius: ${radiusKm} km
+
+Based on your knowledge of this location, provide relevant safety alerts and tips. Consider:
+1. Known safety concerns in this area (crime hotspots, scam-prone areas, areas to avoid at night)
+2. Local infrastructure issues (network coverage, road conditions, traffic patterns)
+3. Tourist-specific advisories (pickpocketing areas, tourist traps, safe zones)
+4. Environmental factors (weather patterns, natural hazards if applicable)
+5. Positive information (well-patrolled areas, safe tourist zones, helpful local services)
+
+Return ONLY valid JSON with this exact structure:
 {
   "alerts": [
     {
-      "id": "string",
-      "type": "danger" | "low_network" | "info",
-      "radiusKm": number,
+      "id": "unique-id",
+      "type": "danger" | "caution" | "low_network" | "traffic" | "info" | "positive",
+      "radiusKm": 1-5,
       "severity": "low" | "medium" | "high",
-      "message": "string",
-      "confidence": number
+      "message": "specific, actionable alert message",
+      "confidence": 0.0-1.0
     }
   ]
 }
-Rules:
-- Provide 1-3 alerts max
-- If no issues, return an empty alerts array
-- Keep messages short (<= 120 chars)
 
-User location: lat ${lat}, lng ${lng}, radius ${radiusKm} km
-`;
+Alert type meanings:
+- "danger": High crime, unsafe areas, security threats
+- "caution": Moderate risks, pickpocket zones, scam areas
+- "low_network": Poor mobile/internet connectivity
+- "traffic": Heavy traffic, road hazards, congestion
+- "info": General tourist information, cultural notes
+- "positive": Safe areas, helpful services, well-patrolled zones
+
+Rules:
+- Provide 2-5 relevant alerts for this specific location
+- Be specific to the actual area (not generic advice)
+- If this is a generally safe tourist area, include positive alerts
+- Keep messages clear and actionable (<= 120 chars)
+- Use appropriate severity levels
+- Set confidence based on how well-known the area is`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
-
-    const text =
-      response.text ||
-      response.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "";
+    const { text } = await generateGeminiText(prompt);
 
     const parsed = extractJson(text);
     const alerts = Array.isArray(parsed?.alerts) ? parsed.alerts : [];
 
     const normalized = alerts.map((alert, index) => ({
       id: alert.id || `ai-alert-${Date.now()}-${index}`,
-      type: ["danger", "low_network", "info"].includes(alert.type)
+      type: ["danger", "caution", "low_network", "traffic", "info", "positive"].includes(alert.type)
         ? alert.type
         : "info",
       coordinates: { lat, lng },
@@ -891,7 +957,7 @@ User location: lat ${lat}, lng ${lng}, radius ${radiusKm} km
         ? alert.severity
         : "low",
       message: String(alert.message || "General area info").slice(0, 120),
-      confidence: Number(alert.confidence) || 0.4,
+      confidence: Number(alert.confidence) || 0.7,
       source: "ai_estimate",
     }));
 
@@ -899,7 +965,8 @@ User location: lat ${lat}, lng ${lng}, radius ${radiusKm} km
   } catch (err) {
     console.error("Area safety AI error:", err);
 
-    const fallback = safetyAlerts
+    // Try static fallback first (pre-configured alerts)
+    const staticFallback = safetyAlerts
       .map((alert) => {
         const distanceKm = haversineKm(
           { lat, lng },
@@ -909,6 +976,29 @@ User location: lat ${lat}, lng ${lng}, radius ${radiusKm} km
       })
       .filter((alert) => alert.distanceKm <= radiusKm);
 
-    return res.status(200).json({ alerts: fallback, source: "fallback" });
+    // If no static alerts nearby, provide a generic location-aware fallback
+    if (staticFallback.length === 0) {
+      const genericFallback = [
+        {
+          id: `fallback-info-${Date.now()}`,
+          type: "info",
+          coordinates: { lat, lng },
+          radiusKm: radiusKm,
+          severity: "low",
+          message: `Stay alert in ${locationName}. Keep valuables secure and stay in well-lit areas.`,
+          confidence: 0.5,
+          source: "fallback_generic",
+        }
+      ];
+      return res.status(200).json({ alerts: genericFallback, source: "fallback" });
+    }
+
+    return res.status(200).json({ alerts: staticFallback, source: "fallback" });
   }
+});
+
+// ----------------- Start Server -----------------
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Backend running on port ${PORT}`);
+  validatePlacesApiKey();
 });

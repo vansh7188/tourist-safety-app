@@ -3,8 +3,20 @@ import { useSafetyAlerts } from "../context/SafetyAlertsContext";
 
 const labelForType = (type) => {
   if (type === "danger") return "Danger";
+  if (type === "caution") return "Caution";
   if (type === "low_network") return "Low Network";
+  if (type === "traffic") return "Traffic Advisory";
+  if (type === "positive") return "Safe Zone / Tip";
   return "Info";
+};
+
+const badgeClassForType = (type) => {
+  if (type === "danger") return "bg-red-100 text-red-700 border-red-200";
+  if (type === "caution") return "bg-amber-100 text-amber-800 border-amber-200";
+  if (type === "low_network") return "bg-yellow-100 text-yellow-800 border-yellow-200";
+  if (type === "traffic") return "bg-orange-100 text-orange-800 border-orange-200";
+  if (type === "positive") return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  return "bg-blue-100 text-blue-800 border-blue-200";
 };
 
 const severityToRisk = (severity = "") => {
@@ -73,12 +85,12 @@ function SmartSafetyAlerts() {
                 type="button"
                 key={alert.id}
                 onClick={() => setSelectedAlert(alert)}
-                className="text-left border border-slate-200 rounded-lg px-3 py-2 hover:bg-sky-50 transition"
+                className={`text-left border rounded-lg px-3 py-2 hover:opacity-80 transition ${badgeClassForType(alert.type)}`}
               >
-                <div className="text-sm font-semibold text-gray-800">
+                <div className="text-sm font-semibold">
                   {labelForType(alert.type)}
                 </div>
-                <div className="text-sm font-semibold text-slate-600">
+                <div className="text-xs font-medium opacity-90">
                   {alert.severity} severity · {alert.distanceKm.toFixed(2)} km away
                 </div>
               </button>

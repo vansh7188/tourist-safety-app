@@ -139,7 +139,10 @@ export const SafetyAlertsProvider = ({ children }) => {
     if (!location) return "unknown";
     const active = detailedAlerts.filter((alert) => alert.distanceKm <= alert.radiusKm);
     if (active.some((alert) => alert.type === "danger")) return "danger";
+    if (active.some((alert) => alert.type === "caution")) return "caution";
     if (active.some((alert) => alert.type === "low_network")) return "low_network";
+    if (active.some((alert) => alert.type === "traffic")) return "traffic";
+    if (active.some((alert) => alert.type === "positive")) return "positive";
     if (active.length > 0) return "info";
     return "normal";
   }, [detailedAlerts, location]);

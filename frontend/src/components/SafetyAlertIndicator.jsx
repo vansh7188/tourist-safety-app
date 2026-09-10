@@ -3,23 +3,32 @@ import { useSafetyAlerts } from "../context/SafetyAlertsContext";
 
 const statusLabel = (status) => {
   if (status === "danger") return "High crime";
+  if (status === "caution") return "Caution area";
   if (status === "low_network") return "Low network";
+  if (status === "traffic") return "Traffic advisory";
   if (status === "info") return "Area info";
+  if (status === "positive") return "Safe area";
   if (status === "normal") return "Normal area";
   return "Checking";
 };
 
 const statusClasses = (status) => {
   if (status === "danger") return "bg-red-600 text-white";
-  if (status === "low_network") return "bg-amber-400 text-gray-900";
+  if (status === "caution") return "bg-amber-500 text-white";
+  if (status === "low_network") return "bg-yellow-500 text-gray-900";
+  if (status === "traffic") return "bg-orange-500 text-white";
   if (status === "info") return "bg-blue-500 text-white";
+  if (status === "positive") return "bg-emerald-500 text-white";
   if (status === "normal") return "bg-green-500 text-white";
   return "bg-gray-300 text-gray-700";
 };
 
 const labelForType = (type) => {
   if (type === "danger") return "Danger";
+  if (type === "caution") return "Caution";
   if (type === "low_network") return "Low Network";
+  if (type === "traffic") return "Traffic Advisory";
+  if (type === "positive") return "Safe Zone";
   return "Info";
 };
 
