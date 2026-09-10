@@ -12,9 +12,8 @@ import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import { GoogleGenAI } from "@google/genai";
 
-// Force Node.js to use Google DNS for MongoDB SRV resolution
-// Fixes local DNS servers that don't properly handle SRV records
-dns.setServers(["8.8.8.8", "8.8.4.4"]);
+// Prefer IPv4 when a network does not provide working IPv6 egress.
+dns.setDefaultResultOrder("ipv4first");
 
 import { Profile } from "./models/Profile.js";
 import {
@@ -45,16 +44,16 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-const GEMINI_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-pro",
-  "gemini-2.0-flash-exp",
-];
+const GEMINI_MODELS = (process.env.GEMINI_MODELS ||
+  "gemini-flash-lite-latest,gemini-flash-latest,gemini-2.5-flash")
+  .split(",")
+  .map((model) => model.trim())
+  .filter(Boolean);
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const generateGeminiText = async (prompt, { maxRetries = 2 } = {}) => {
+const generateGeminiText = async (prompt, { maxRetries = 1 } = {}) => {
   let lastError = null;
 
   for (const model of GEMINI_MODELS) {
@@ -78,6 +77,16 @@ const generateGeminiText = async (prompt, { maxRetries = 2 } = {}) => {
         const message = error?.message || "";
         const status = error?.status || 0;
 
+        const isNetworkError =
+          error?.cause?.code === "ENOTFOUND" ||
+          error?.cause?.code === "UND_ERR_CONNECT_TIMEOUT" ||
+          error?.cause?.code === "ECONNRESET" ||
+          message.includes("fetch failed");
+        if (isNetworkError) {
+          console.warn(`Gemini unavailable due to network error: ${message}`);
+          throw error;
+        }
+
         // Rate limit (429) — retry or try next model
         if (status === 429 || message.includes("429") || message.includes("RESOURCE_EXHAUSTED")) {
           const isQuotaExhausted = message.includes("quota") || message.includes("Quota exceeded");
@@ -99,14 +108,18 @@ const generateGeminiText = async (prompt, { maxRetries = 2 } = {}) => {
           break; // next model
         }
 
-        // Non-retryable model issue — try next model immediately
+        // Retired, unsupported, or unauthorized model — try the next model.
         if (
+          status === 401 ||
+          status === 403 ||
+          status === 404 ||
           message.includes("permission") ||
           message.includes("not enabled") ||
           message.includes("API key") ||
-          message.includes("model")
+          message.includes("model") ||
+          message.includes("NOT_FOUND")
         ) {
-          console.warn(`Gemini model ${model} unavailable:`, message);
+          console.warn(`Gemini model ${model} is unavailable (${status || "unknown error"})`);
           break; // next model
         }
 
@@ -404,25 +417,37 @@ app.use(
 app.use(bodyParser.json({ limit: "25mb" }));
 
 // ----------------- MongoDB connections -----------------
-// Use Google DNS servers for MongoDB SRV resolution (fixes local DNS issues)
 const mongoOptions = {
   family: 4, // Force IPv4
-  // Override DNS resolution to use public DNS servers
+  serverSelectionTimeoutMS: 10000,
+  connectTimeoutMS: 10000,
 };
 
-mongoose
-  .connect(process.env.MONGO_URI2, mongoOptions)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB error:", err));
+if (!process.env.MONGO_URI2) {
+  console.error("❌ MONGO_URI2 is missing. Database features are disabled.");
+} else {
+  mongoose
+    .connect(process.env.MONGO_URI2, mongoOptions)
+    .then(() => console.log("✅ MongoDB connected"))
+    .catch((err) => {
+      console.error("❌ MongoDB connection failed:", err.message);
+      console.error(
+        "   Check Atlas Network Access (allow this machine's IP), credentials, and outbound port 27017."
+      );
+    });
+}
 
-const digitalIdConnection = mongoose.createConnection(process.env.MONGO_URI2, mongoOptions);
+const digitalIdConnection = mongoose.createConnection(
+  process.env.MONGO_URI2 || "mongodb://127.0.0.1:27017/sih_safety_db",
+  mongoOptions
+);
 
 digitalIdConnection.on("connected", () => {
   console.log("✅ MongoDB (Digital ID DB) connected");
 });
 
 digitalIdConnection.on("error", (err) => {
-  console.error("❌ MongoDB (Digital ID DB) error:", err);
+  console.error("❌ MongoDB (Digital ID DB) connection failed:", err.message);
 });
 
 const DigitalId = digitalIdConnection.model("DigitalId", digitalIdSchema);
