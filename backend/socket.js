@@ -121,7 +121,15 @@ export function createSocketServer({ server, jwtSecret, Profile, EmergencyPost, 
         });
         const populatedMessage = await message.populate("senderId", "name email");
 
+        // Emit to this post's room
         io.to(`emergency:${postId}`).emit("chat:message", populatedMessage);
+
+        // Also emit directly to requester and responders so they receive messages
+        // even if viewing a different post in the same conversation thread
+        emitToUser(post.userId, "chat:message", populatedMessage);
+        post.respondersAccepted.forEach((responderId) => {
+          emitToUser(responderId, "chat:message", populatedMessage);
+        });
       } catch (error) {
         socket.emit("chat:error", { error: "Failed to send message" });
       }

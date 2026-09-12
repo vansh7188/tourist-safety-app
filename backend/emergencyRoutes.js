@@ -9,6 +9,7 @@ export function createEmergencyRouter({
   EmergencyPost,
   Profile,
   Message,
+  DigitalId,
   emitToUser = () => {},
   joinUserToRoom = () => {},
 }) {
@@ -76,18 +77,20 @@ export function createEmergencyRouter({
       streamifier.createReadStream(file.buffer).pipe(stream);
     });
 
-  const notifyRespondersByEmail = async ({ responders, post, requesterName }) => {
+  const notifyRespondersByEmail = async ({ responders, post, requesterName, requesterDigitalId }) => {
     if (!mailTransporter || !mailFrom) return;
 
     const recipients = responders.map((responder) => responder.email).filter(Boolean);
     if (!recipients.length) return;
+
+    const digitalIdText = requesterDigitalId ? `\nSender's Digital ID: ${requesterDigitalId}\n` : "";
 
     try {
       await mailTransporter.sendMail({
         from: mailFrom,
         to: recipients,
         subject: "Emergency Helper request nearby",
-        text: `${requesterName} needs help nearby.\n\n${post.text || "Media attached"}\n\nOpen the Safe Travel app to respond.`,
+        text: `${requesterName} needs help nearby.${digitalIdText}\n${post.text || "Media attached"}\n\nOpen the Safe Travel app to respond.`,
       });
     } catch (error) {
       console.error("Emergency responder email notification failed:", error.message);
@@ -140,7 +143,12 @@ export function createEmergencyRouter({
     }
 
     try {
-      const nearbyProfiles = await Profile.aggregate([
+      // Get sender's Digital ID for email notification
+      const senderDigitalId = await DigitalId.findOne({ email: profile.email });
+      const senderDigitalIdNumber = senderDigitalId?.digitalIdNumber || null;
+
+      // Search DigitalId collection for 10 nearest online people with Digital IDs
+      const nearbyDigitalIds = await DigitalId.aggregate([
         {
           $geoNear: {
             near: {
@@ -151,7 +159,7 @@ export function createEmergencyRouter({
             distanceField: "distanceMeters",
             spherical: true,
             query: {
-              _id: { $ne: profile._id },
+              email: { $ne: profile.email },
               isOnline: true,
               lastKnownLocation: { $exists: true },
             },
@@ -160,6 +168,11 @@ export function createEmergencyRouter({
         { $limit: 10 },
       ]);
 
+      // Get Profile references for these Digital IDs to maintain compatibility
+      const responderEmails = nearbyDigitalIds.map((did) => did.email);
+      const responderProfiles = await Profile.find({ email: { $in: responderEmails } });
+      const profileMap = new Map(responderProfiles.map((p) => [p.email, p]));
+
       if (req.files?.length && !cloudinaryConfigured) {
         return res.status(500).json({ error: "Cloudinary is not configured" });
       }
@@ -167,7 +180,8 @@ export function createEmergencyRouter({
       const uploadedMediaUrls = req.files?.length
         ? await Promise.all(req.files.map(uploadToCloudinary))
         : [];
-      const responderIds = nearbyProfiles.map((responder) => responder._id);
+
+      const responderIds = responderProfiles.map((p) => p._id);
       const emergencyPost = await EmergencyPost.create({
         userId: profile._id,
         text,
@@ -179,28 +193,51 @@ export function createEmergencyRouter({
         respondersNotified: responderIds,
       });
 
-      nearbyProfiles.forEach((responder) => {
-        emitToUser(responder._id, "emergency:new", {
+      // For each responder, check if this requester has sent them previous requests
+      for (const digitalId of nearbyDigitalIds) {
+        const responderProfile = profileMap.get(digitalId.email);
+        if (!responderProfile) continue;
+
+        const previousRequestCount = await EmergencyPost.countDocuments({
+          userId: profile._id,
+          respondersNotified: responderProfile._id,
+          _id: { $ne: emergencyPost._id },
+        });
+
+        const hasPreviousAccepted = await EmergencyPost.exists({
+          userId: profile._id,
+          respondersAccepted: responderProfile._id,
+        });
+
+        emitToUser(responderProfile._id, "emergency:new", {
           postId: emergencyPost._id,
+          userId: profile._id,
           requesterName: profile.name,
           textSnippet: text.slice(0, 200),
           mediaThumbnail: emergencyPost.mediaUrls[0] || null,
-          distanceMeters: responder.distanceMeters,
+          distanceMeters: digitalId.distanceMeters,
           location: emergencyPost.location,
+          isRepeatRequester: previousRequestCount > 0 || Boolean(hasPreviousAccepted),
+          requesterRequestCount: previousRequestCount + 1,
+          hasPreviousAccepted: Boolean(hasPreviousAccepted),
         });
-      });
+      }
+
       void notifyRespondersByEmail({
-        responders: nearbyProfiles,
+        responders: nearbyDigitalIds,
         post: emergencyPost,
         requesterName: profile.name,
+        requesterDigitalId: senderDigitalIdNumber,
       });
 
       return res.status(201).json({
         post: emergencyPost,
-        responders: nearbyProfiles.map((responder) => ({
-          _id: responder._id,
-          name: responder.name,
-          distanceMeters: responder.distanceMeters,
+        responders: nearbyDigitalIds.map((digitalId) => ({
+          _id: profileMap.get(digitalId.email)?._id,
+          name: digitalId.name,
+          email: digitalId.email,
+          digitalIdNumber: digitalId.digitalIdNumber,
+          distanceMeters: digitalId.distanceMeters,
         })),
       });
     } catch (error) {
@@ -236,13 +273,40 @@ export function createEmergencyRouter({
       })
         .sort({ createdAt: -1 })
         .limit(20)
-        .populate("userId", "name");
+        .populate("userId", "name email");
+
+      // For each unique requester, calculate request count and previous acceptance
+      const requesterIds = [...new Set(posts.map(p => p.userId?._id?.toString()).filter(Boolean))];
+      const requesterStats = {};
+
+      for (const requesterId of requesterIds) {
+        const totalRequests = await EmergencyPost.countDocuments({
+          userId: requesterId,
+          respondersNotified: profile._id,
+        });
+
+        const hasPreviousAccepted = await EmergencyPost.exists({
+          userId: requesterId,
+          respondersAccepted: profile._id,
+        });
+
+        requesterStats[requesterId] = {
+          totalRequests,
+          hasPreviousAccepted: Boolean(hasPreviousAccepted),
+        };
+      }
 
       const postsWithAcceptance = posts.map((post) => {
         const postObject = post.toObject();
+        const requesterId = post.userId?._id?.toString();
+        const stats = requesterStats[requesterId] || { totalRequests: 1, hasPreviousAccepted: false };
+
         return {
           ...postObject,
           acceptedByMe: post.respondersAccepted?.some((id) => id.equals(profile._id)) || false,
+          isRepeatRequester: stats.totalRequests > 1 || stats.hasPreviousAccepted,
+          requesterRequestCount: stats.totalRequests,
+          hasPreviousAccepted: stats.hasPreviousAccepted,
         };
       });
 
@@ -269,7 +333,32 @@ export function createEmergencyRouter({
         return res.status(403).json({ error: "You are not a participant" });
       }
 
-      const messages = await Message.find({ postId: post._id })
+      // Keep continuous conversation history between the same user pair across requests
+      let relatedPostIds = [post._id];
+
+      if (isAcceptedResponder) {
+        // If current user is a helper, find all posts from this same requester that this helper accepted or is viewing
+        const relatedPosts = await EmergencyPost.find({
+          userId: post.userId,
+          $or: [
+            { respondersAccepted: profile._id },
+            { _id: post._id },
+          ],
+        }).select("_id");
+        relatedPostIds = relatedPosts.map((p) => p._id);
+      } else if (isRequester && post.respondersAccepted?.length > 0) {
+        // If current user is the requester, find all posts by this requester involving these same helpers
+        const relatedPosts = await EmergencyPost.find({
+          userId: profile._id,
+          $or: [
+            { respondersAccepted: { $in: post.respondersAccepted } },
+            { _id: post._id },
+          ],
+        }).select("_id");
+        relatedPostIds = relatedPosts.map((p) => p._id);
+      }
+
+      const messages = await Message.find({ postId: { $in: relatedPostIds } })
         .sort({ createdAt: 1 })
         .populate("senderId", "name email");
       return res.json({ messages });
