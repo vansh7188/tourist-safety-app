@@ -10,11 +10,14 @@ import Chatbot from "../components/Chatbot";
 import SafetyAlertIndicator from "../components/SafetyAlertIndicator";
 import SmartSafetyAlerts from "../components/SmartSafetyAlerts";
 import { SafetyAlertsProvider } from "../context/SafetyAlertsContext";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { useLanguage } from "../context/LanguageContext";
 
 const libraries = ["places"];
 
 function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [showChatbot, setShowChatbot] = useState(false);
   const [showTripPlanner, setShowTripPlanner] = useState(false);
 
@@ -83,6 +86,7 @@ function Dashboard() {
             </div>
 
             <div className="flex items-center gap-4">
+              <LanguageSwitcher dark />
               <SafetyAlertIndicator />
               <button
                 type="button"
@@ -91,13 +95,13 @@ function Dashboard() {
                 className="flex items-center gap-2 rounded-full border border-rose-200/40 bg-rose-500/90 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-rose-600"
               >
                 <FaLifeRing />
-                <span>Emergency</span>
+                <span>{t("emergency")}</span>
               </button>
               <button
                 onClick={() => navigate("/admin/dashboard")}
                 className="rounded-full border border-white/20 bg-white/15 px-4 py-1.5 text-sm font-medium text-white transition-all hover:bg-white/25"
               >
-                Admin Dashboard
+                {t("adminDashboard")}
               </button>
               <motion.div
                 whileHover={{ scale: 1.1 }}
@@ -105,7 +109,7 @@ function Dashboard() {
                 onClick={() => navigate("/profile")}
               >
                 <FaUserCircle className="text-3xl" />
-                <span className="mt-1 text-xs">Profile</span>
+                <span className="mt-1 text-xs">{t("profile")}</span>
               </motion.div>
             </div>
           </div>
@@ -117,7 +121,7 @@ function Dashboard() {
               <div className="text-xs font-semibold uppercase tracking-widest text-teal-200">Safe Travel</div>
               <div className="text-xl font-bold text-white">Globe Guard</div>
             </div>
-            <SafetyAlertIndicator />
+              <div className="flex items-center gap-3"><LanguageSwitcher dark /><SafetyAlertIndicator /></div>
           </div>
         </div>
 
@@ -156,7 +160,7 @@ function Dashboard() {
                   onClick={() => setShowChatbot(false)}
                   className="text-xs font-semibold text-slate-500"
                 >
-                  Close
+                  {t("close")}
                 </button>
               </div>
               <Chatbot />
@@ -168,15 +172,15 @@ function Dashboard() {
             <div className="w-full max-w-5xl max-h-[90vh] section-card premium-card p-4 md:p-5 overflow-y-auto">
               <div className="mb-3 flex items-center justify-between">
                 <div>
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">Planning</div>
-                  <div className="text-base md:text-lg font-extrabold text-slate-900">Trip Planner</div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">{t("planning")}</div>
+                  <div className="text-base md:text-lg font-extrabold text-slate-900">{t("tripPlanner")}</div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowTripPlanner(false)}
                   className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300"
                 >
-                  Close
+                  {t("close")}
                 </button>
               </div>
               <TripPlanner tripPlan={tripPlan} setTripPlan={setTripPlan} />

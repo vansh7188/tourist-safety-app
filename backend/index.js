@@ -437,17 +437,14 @@ if (!process.env.MONGO_URI2) {
     });
 }
 
-const digitalIdConnection = mongoose.createConnection(
-  process.env.MONGO_URI2 || "mongodb://127.0.0.1:27017/sih_safety_db",
-  mongoOptions
-);
+const digitalIdConnection = mongoose.connection;
 
 digitalIdConnection.on("connected", () => {
-  console.log("✅ MongoDB (Digital ID DB) connected");
+  console.log("✅ MongoDB connected for Digital ID and application models");
 });
 
 digitalIdConnection.on("error", (err) => {
-  console.error("❌ MongoDB (Digital ID DB) connection failed:", err.message);
+  console.error("❌ MongoDB connection error:", err.message);
 });
 
 const DigitalId = digitalIdConnection.model("DigitalId", digitalIdSchema);

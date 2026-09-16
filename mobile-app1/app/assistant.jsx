@@ -39,9 +39,6 @@ export default function AssistantScreen() {
   const [voiceDraft, setVoiceDraft] = useState('');
   const listRef = useRef(null);
 
-  if (hydrating) return <LoadingSpinner />;
-  if (!user) return <Redirect href="/login" />;
-
   const sendMessage = async () => {
     if (!input.trim()) return;
     const msg = { id: Date.now().toString(), text: input.trim(), fromUser: true };
@@ -104,6 +101,9 @@ export default function AssistantScreen() {
       }
     };
   }, []);
+
+  if (hydrating) return <LoadingSpinner />;
+  if (!user) return <Redirect href="/login" />;
 
   const voiceAvailable = ExpoSpeechRecognitionModule?.isRecognitionAvailable;
 

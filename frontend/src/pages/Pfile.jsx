@@ -5,10 +5,13 @@ import TripPlan from "../components/trip_plan_profile";
 import MobileNavBar from "../components/MobileNavBar";
 import SafetyAlertIndicator from "../components/SafetyAlertIndicator";
 import { SafetyAlertsProvider } from "../context/SafetyAlertsContext";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { useLanguage } from "../context/LanguageContext";
 
 function Pfile() {
   const [activeTab, setActiveTab] = useState("digitalId");
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -23,8 +26,8 @@ function Pfile() {
       {/* Sidebar */}
       <div className="hidden md:flex w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 text-white flex-col shadow-2xl">
         <div className="p-6 border-b border-white/10">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/50">Safe Travel</p>
-          <h2 className="text-2xl font-bold">Profile Hub</h2>
+          <div className="flex items-center justify-between gap-2"><p className="text-xs uppercase tracking-[0.3em] text-white/50">{t("safeTravel")}</p><LanguageSwitcher dark /></div>
+          <h2 className="text-2xl font-bold">{t("profile")}</h2>
         </div>
         <ul className="flex flex-col p-4 space-y-2">
           <li
@@ -35,7 +38,7 @@ function Pfile() {
             }`}
             onClick={() => setActiveTab("digitalId")}
           >
-            Digital ID
+            {t("digitalId")}
           </li>
           <li
             className={`p-3 rounded-lg cursor-pointer transition ${
@@ -45,13 +48,13 @@ function Pfile() {
             }`}
             onClick={() => setActiveTab("tripPlan")}
           >
-            Trip Plan
+            {t("tripPlan")}
           </li>
           <li
             className="p-3 rounded-lg cursor-pointer transition hover:bg-red-500/70 mt-8 border-t border-white/10 pt-4"
             onClick={handleLogout}
           >
-            🚪 Logout
+            {t("logout")}
           </li>
         </ul>
       </div>
@@ -61,8 +64,8 @@ function Pfile() {
         <div className="md:hidden mb-6">
           <div className="app-header rounded-2xl px-4 py-3 text-white shadow-lg flex items-center justify-between">
             <div>
-              <div className="text-xs uppercase tracking-[0.3em] text-white/70">Safe Travel</div>
-              <div className="text-xl font-bold">Profile Hub</div>
+              <div className="text-xs uppercase tracking-[0.3em] text-white/70">{t("safeTravel")}</div>
+              <div className="text-xl font-bold">{t("profile")}</div>
             </div>
             <SafetyAlertIndicator />
           </div>
@@ -76,7 +79,7 @@ function Pfile() {
                   : "bg-white/70 text-slate-700"
               }`}
             >
-              Digital ID
+              {t("digitalId")}
             </button>
             <button
               type="button"
@@ -87,14 +90,14 @@ function Pfile() {
                   : "bg-white/70 text-slate-700"
               }`}
             >
-              Trip Plan
+              {t("tripPlan")}
             </button>
             <button
               type="button"
               onClick={handleLogout}
               className="px-4 py-2 rounded-full text-xs font-semibold bg-rose-500 text-white"
             >
-              Logout
+              {t("logout")}
             </button>
           </div>
         </div>

@@ -10,6 +10,18 @@ import { Profile } from "./models/Profile.js";
 import { v2 as cloudinary } from "cloudinary";
 // --- Schemas (Exported so index.js can use them) ---
 
+const normalizeSmsNumber = (value) => {
+  const raw = String(value || "").trim().replace(/[\s()-]/g, "");
+  if (/^\+\d{10,15}$/.test(raw)) return raw;
+
+  const defaultCountryCode = String(process.env.TWILIO_DEFAULT_COUNTRY_CODE || "91").replace(/\D/g, "");
+  if (new RegExp(`^\d{10}$`).test(raw) && defaultCountryCode) {
+    return `+${defaultCountryCode}${raw}`;
+  }
+
+  return null;
+};
+
 const emergencyContactSchema = new mongoose.Schema({
   
   name: {
@@ -433,20 +445,22 @@ router.post("/panic", async (req, res) => {
       Boolean(process.env.TWILIO_AUTH_TOKEN)
     );
 
-    const smsRecipients = (panicData.emergency_contacts || [])
+    const rawSmsRecipients = (panicData.emergency_contacts || [])
       .map((c) => c.contact || c.phone)
       .filter(Boolean);
+    const smsRecipients = rawSmsRecipients.map(normalizeSmsNumber).filter(Boolean);
+    const invalidRecipients = rawSmsRecipients.filter(
+      (phone) => !normalizeSmsNumber(phone)
+    );
 
     const emailRecipients = (panicData.emergency_contacts || [])
       .map((c) => c.email)
       .filter(Boolean);
 
-    console.log("Raw recipients:", smsRecipients);
+    console.log("Raw recipients:", rawSmsRecipients);
+    console.log("Normalized SMS recipients:", smsRecipients);
     console.log("Email recipients:", emailRecipients);
 
-    const invalidRecipients = smsRecipients.filter(
-      (phone) => !/^\+\d{10,15}$/.test(phone)
-    );
     if (invalidRecipients.length > 0) {
       console.warn("Invalid E.164 recipients:", invalidRecipients);
     }
@@ -456,25 +470,26 @@ router.post("/panic", async (req, res) => {
     } else if (smsRecipients.length === 0) {
       smsStatus = "no_recipients";
     } else {
-      try {
-        const results = await Promise.all(
-          smsRecipients.map((to) =>
-            twilioClient.messages.create({
-              to,
-              from: twilioFrom,
-              body: smsBody,
-            })
-          )
-        );
-        console.log(
-          "Twilio SMS sent:",
-          results.map((r) => ({ sid: r.sid, to: r.to, status: r.status }))
-        );
-        smsStatus = "sent";
-      } catch (smsError) {
-        console.error("Twilio SMS error:", smsError);
-        smsStatus = "failed";
-      }
+      const results = await Promise.allSettled(
+        smsRecipients.map((to) =>
+          twilioClient.messages.create({
+            to,
+            from: twilioFrom,
+            body: smsBody,
+          })
+        )
+      );
+      const sent = results
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => ({
+          sid: result.value.sid,
+          to: result.value.to,
+          status: result.value.status,
+        }));
+      const failed = results.filter((result) => result.status === "rejected");
+      console.log("Twilio SMS sent:", sent);
+      failed.forEach((result) => console.error("Twilio SMS error:", result.reason));
+      smsStatus = sent.length > 0 ? (failed.length > 0 ? "partial" : "sent") : "failed";
     }
 
     const emailBody =

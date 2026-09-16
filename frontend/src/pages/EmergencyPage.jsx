@@ -6,6 +6,8 @@ import EmergencyHelperForm from "../components/EmergencyHelperForm";
 import IncomingEmergencyAlert from "../components/IncomingEmergencyAlert";
 import { EmergencyProvider } from "../context/EmergencyContext";
 import { useEmergency } from "../context/useEmergency";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { useLanguage } from "../context/LanguageContext";
 
 function EmergencyPage() {
   const navigate = useNavigate();
@@ -27,6 +29,7 @@ function EmergencyPage() {
 
 function EmergencyContent({ currentLocation, navigate }) {
   const { receivedLoading, socket } = useEmergency() || {};
+  const { t } = useLanguage();
   const [activeSection, setActiveSection] = useState("post");
   const [sentPosts, setSentPosts] = useState([]);
   const [sentLoading, setSentLoading] = useState(true);
@@ -74,17 +77,18 @@ function EmergencyContent({ currentLocation, navigate }) {
         <header className="sticky top-0 z-50 border-b border-white/15 bg-[#04617B] text-white shadow-sm backdrop-blur-md">
           <div className="flex w-full items-center justify-between px-4 py-3 md:px-6">
             <button type="button" onClick={() => navigate("/dashboard")} className="text-left">
-              <div className="text-xs font-semibold uppercase tracking-widest text-teal-200">Safe Travel</div>
+              <div className="text-xs font-semibold uppercase tracking-widest text-teal-200">{t("safeTravel")}</div>
               <div className="text-xl font-bold text-white">Globe Guard</div>
-              <div className="mt-1 text-xs text-teal-100/80">Emergency Helper</div>
+              <div className="mt-1 text-xs text-teal-100/80">{t("emergencyHelper")}</div>
             </button>
             <div className="flex items-center gap-4">
+              <LanguageSwitcher dark />
               <button
                 type="button"
                 onClick={() => navigate("/dashboard")}
                 className="hidden rounded-full border border-white/20 bg-white/15 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-white/25 md:block"
               >
-                Back to Dashboard
+                {t("backToDashboard")}
               </button>
               <button type="button" onClick={() => navigate("/profile")} className="flex flex-col items-center text-white">
                 <FaUserCircle className="text-3xl" />
@@ -96,20 +100,20 @@ function EmergencyContent({ currentLocation, navigate }) {
 
         <main className="mx-auto w-full max-w-350 px-3 py-6 md:px-4 md:py-8 lg:px-5">
           <div className="mb-6 max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-rose-600">Community response</p>
-            <h1 className="mt-2 text-3xl font-extrabold text-slate-900 md:text-4xl">Emergency Helper</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-rose-600">{t("communityResponse")}</p>
+            <h1 className="mt-2 text-3xl font-extrabold text-slate-900 md:text-4xl">{t("emergencyHelper")}</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Send your location and request to nearby people who are online and ready to help.
+              {t("sendLocationDescription")}
             </p>
           </div>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
             <aside className="w-full shrink-0 lg:ml-1 lg:w-60 xl:w-64">
               <div className="section-card border border-slate-200/80 bg-white/80 p-2 shadow-sm">
-                <p className="px-3 pb-2 pt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Emergency menu</p>
+                <p className="px-3 pb-2 pt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t("emergencyMenu")}</p>
                 <div className="flex gap-2 overflow-x-auto lg:flex-col">
-                  <SectionButton active={activeSection === "post"} tone="rose" onClick={() => setActiveSection("post")} number="01" label="Post emergency" />
-                  <SectionButton active={activeSection === "sent"} tone="sky" onClick={() => setActiveSection("sent")} number="02" label="Sent by me" />
-                  <SectionButton active={activeSection === "received"} tone="amber" onClick={() => setActiveSection("received")} number="03" label="Received nearby" />
+                  <SectionButton active={activeSection === "post"} tone="rose" onClick={() => setActiveSection("post")} number="01" label={t("postEmergency")} />
+                  <SectionButton active={activeSection === "sent"} tone="sky" onClick={() => setActiveSection("sent")} number="02" label={t("sentByMe")} />
+                  <SectionButton active={activeSection === "received"} tone="amber" onClick={() => setActiveSection("received")} number="03" label={t("receivedNearby")} />
                 </div>
               </div>
             </aside>
@@ -117,7 +121,7 @@ function EmergencyContent({ currentLocation, navigate }) {
             <section className={`section-card min-w-0 flex-1 p-5 shadow-sm md:p-6 ${activeSection === "post" ? "border border-rose-200/80 bg-white/85" : activeSection === "sent" ? "border border-slate-200/80 bg-white/85" : "border border-amber-200/80 bg-amber-50/50"}`}>
               {activeSection === "post" && (
                 <>
-                  <SectionHeading number="01" title="Post an emergency" description="Tell nearby helpers what is happening and share your live location." tone="rose" />
+                  <SectionHeading number="01" title={t("postAnEmergency")} description={t("postEmergencyDescription")} tone="rose" />
                   <EmergencyHelperForm currentLocation={currentLocation} onPosted={addSentPost} />
                 </>
               )}

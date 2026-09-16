@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaEnvelope, FaLock, FaShieldAlt } from "react-icons/fa";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { useLanguage } from "../context/LanguageContext";
 
 function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -11,6 +13,7 @@ function Auth() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const API_BASE_URL =
     import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -105,7 +108,10 @@ function Auth() {
   };
 
   return (
-    <div className="min-h-screen w-full app-shell flex items-center justify-center px-4 py-8 sm:px-8 lg:px-12">
+    <div className="relative min-h-screen w-full app-shell flex items-center justify-center px-4 py-8 sm:px-8 lg:px-12">
+      <div className="absolute right-4 top-4 sm:right-8 lg:right-12">
+        <LanguageSwitcher />
+      </div>
       <div className="relative grid min-h-[min(760px,calc(100vh-4rem))] w-full max-w-6xl overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 shadow-md backdrop-blur-md md:grid-cols-2">
         <motion.div
           className="flex flex-col justify-center gap-8 p-6 sm:p-10 lg:p-14"
@@ -118,12 +124,12 @@ function Auth() {
               Safe Travel
             </p>
             <h2 className="mt-2 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-              {isSignUp ? "Create your account" : "Welcome back"}
+              {isSignUp ? t("createAccount") : t("welcomeBack")}
             </h2>
             <p className="mt-3 max-w-lg text-base leading-relaxed text-slate-600 sm:text-lg">
               {isSignUp
-                ? "Join to unlock live safety alerts and secure travel tools."
-                : "Sign in to access your safety dashboard."}
+                ? t("joinDescription")
+                : t("loginDescription")}
             </p>
           </div>
 
@@ -134,7 +140,7 @@ function Auth() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
+                placeholder={t("email")}
                 className="w-full bg-transparent text-base outline-none"
                 required
               />
@@ -146,7 +152,7 @@ function Auth() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                placeholder={t("password")}
                 className="w-full bg-transparent text-base outline-none"
                 required
               />
@@ -161,7 +167,7 @@ function Auth() {
               whileHover={!loading ? { scale: 1.02 } : {}}
               whileTap={!loading ? { scale: 0.98 } : {}}
             >
-              {loading ? "Please wait..." : isSignUp ? "Sign Up" : "Login"}
+              {loading ? t("pleaseWait") : isSignUp ? t("signUp") : t("login")}
             </motion.button>
           </form>
 
@@ -200,7 +206,7 @@ function Auth() {
                   setSuccess("");
                 }}
               >
-                Already have an account? Sign In
+                {t("alreadyAccount")}
               </button>
             ) : (
               <button
@@ -212,7 +218,7 @@ function Auth() {
                   setSuccess("");
                 }}
               >
-                New here? Create an Account
+                {t("newHere")}
               </button>
             )}
           </div>
@@ -226,17 +232,17 @@ function Auth() {
         >
           <div className="flex items-center gap-3 text-sm uppercase tracking-[0.3em] text-white/70">
             <FaShieldAlt className="text-xl" />
-            Traveler Shield
+            {t("travelerShield")}
           </div>
           <div>
             <h3 className="mb-4 text-4xl font-extrabold tracking-tight lg:text-5xl">
-              {isSignUp ? "Step into safer travel" : "Stay protected"}
+              {isSignUp ? t("saferTravel") : t("stayProtected")}
             </h3>
             <p className="max-w-md text-lg leading-relaxed text-white/90">
-              Get live alerts, verified contacts, and directions to safe spots.
+              {t("alertsContactsDirections")}
             </p>
           </div>
-          <div className="text-xs text-white/80">AI powered · Always on guard</div>
+          <div className="text-xs text-white/80">{t("aiPowered")}</div>
         </motion.div>
       </div>
     </div>

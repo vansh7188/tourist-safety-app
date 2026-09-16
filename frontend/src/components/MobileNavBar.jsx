@@ -1,7 +1,9 @@
 import React from "react";
 import { FaHome, FaUserCircle, FaComments, FaLifeRing } from "react-icons/fa";
+import { useLanguage } from "../context/LanguageContext";
 
 function MobileNavBar({ active, onChat, onNavigate }) {
+  const { t } = useLanguage();
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-5 pb-4">
       <div className="app-header rounded-2xl px-4 py-3 text-white flex items-center justify-around shadow-xl">
@@ -13,7 +15,7 @@ function MobileNavBar({ active, onChat, onNavigate }) {
           }`}
         >
           <FaHome className="text-lg" />
-          Home
+          {t("home")}
         </button>
 
         <button
@@ -24,7 +26,7 @@ function MobileNavBar({ active, onChat, onNavigate }) {
           }`}
         >
           <FaLifeRing className="text-lg" />
-          Emergency
+          {t("emergency")}
         </button>
 
         <button
@@ -35,7 +37,7 @@ function MobileNavBar({ active, onChat, onNavigate }) {
           <div className="h-10 w-10 rounded-full btn-accent flex items-center justify-center shadow-lg">
             <FaComments className="text-base" />
           </div>
-          Chat
+          {t("chat")}
         </button>
 
         <button
@@ -46,7 +48,7 @@ function MobileNavBar({ active, onChat, onNavigate }) {
           }`}
         >
           <FaUserCircle className="text-lg" />
-          Profile
+          {t("profile")}
         </button>
       </div>
     </div>

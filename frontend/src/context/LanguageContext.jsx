@@ -1,0 +1,147 @@
+import React, { createContext, useContext, useEffect, useState } from "react";
+
+const translations = {
+  en: {
+    language: "Language",
+    english: "English",
+    hindi: "Hindi",
+    safeTravel: "Safe Travel",
+    getStarted: "Get Started",
+    realTimeSafety: "Real-time safety companion",
+    smartTouristSafety: "Smart Tourist Safety",
+    travelCompanion: "Your travel companion that ensures safety, guides you through secure paths.",
+    startJourney: "Start Your Journey",
+    exploreFeatures: "Explore Features",
+    liveSafetyAlerts: "Live Safety Alerts",
+    liveSafetyAlertsDescription: "Receive local risk signals and stay informed while moving.",
+    smartRouteGuidance: "Smart Route Guidance",
+    smartRouteGuidanceDescription: "Get safer route suggestions designed for public transport.",
+    trustedContacts: "Trusted Contacts",
+    trustedContactsDescription: "Keep emergency contacts and profile details ready anytime.",
+    safetyView: "Safety View",
+    dashboardPreview: "Map, alerts, SOS access, and route planning in one dashboard.",
+    welcomeBack: "Welcome back",
+    createAccount: "Create your account",
+    joinDescription: "Join to unlock live safety alerts and secure travel tools.",
+    loginDescription: "Sign in to access your safety dashboard.",
+    email: "Email",
+    password: "Password",
+    pleaseWait: "Please wait...",
+    signUp: "Sign Up",
+    login: "Login",
+    alreadyAccount: "Already have an account? Sign In",
+    newHere: "New here? Create an Account",
+    travelerShield: "Traveler Shield",
+    saferTravel: "Step into safer travel",
+    stayProtected: "Stay protected",
+    alertsContactsDirections: "Get live alerts, verified contacts, and directions to safe spots.",
+    aiPowered: "AI powered · Always on guard",
+    liveMonitoring: "Live monitoring",
+    aiAssisted: "AI assisted",
+    emergency: "Emergency",
+    adminDashboard: "Admin Dashboard",
+    profile: "Profile",
+    emergencyHelper: "Emergency Helper",
+    backToDashboard: "Back to Dashboard",
+    planning: "Planning",
+    tripPlanner: "Trip Planner",
+    close: "Close",
+    home: "Home",
+    chat: "Chat",
+    digitalId: "Digital ID",
+    tripPlan: "Trip Plan",
+    logout: "Logout",
+    communityResponse: "Community response",
+    sendLocationDescription: "Send your location and request to nearby people who are online and ready to help.",
+    emergencyMenu: "Emergency menu",
+    postEmergency: "Post emergency",
+    sentByMe: "Sent by me",
+    receivedNearby: "Received nearby",
+    postAnEmergency: "Post an emergency",
+    postEmergencyDescription: "Tell nearby helpers what is happening and share your live location.",
+  },
+  hi: {
+    language: "भाषा",
+    english: "अंग्रेज़ी",
+    hindi: "हिंदी",
+    safeTravel: "सुरक्षित यात्रा",
+    getStarted: "शुरू करें",
+    realTimeSafety: "रियल-टाइम सुरक्षा साथी",
+    smartTouristSafety: "स्मार्ट पर्यटक सुरक्षा",
+    travelCompanion: "आपका यात्रा साथी जो सुरक्षा सुनिश्चित करता है और सुरक्षित रास्तों पर आपका मार्गदर्शन करता है।",
+    startJourney: "अपनी यात्रा शुरू करें",
+    exploreFeatures: "सुविधाएँ देखें",
+    liveSafetyAlerts: "लाइव सुरक्षा अलर्ट",
+    liveSafetyAlertsDescription: "स्थानीय जोखिम संकेत प्राप्त करें और यात्रा के दौरान जानकारी रखें।",
+    smartRouteGuidance: "स्मार्ट मार्ग मार्गदर्शन",
+    smartRouteGuidanceDescription: "सार्वजनिक परिवहन के लिए सुरक्षित मार्ग सुझाव पाएँ।",
+    trustedContacts: "विश्वसनीय संपर्क",
+    trustedContactsDescription: "आपातकालीन संपर्क और प्रोफ़ाइल विवरण कभी भी तैयार रखें।",
+    safetyView: "सुरक्षा दृश्य",
+    dashboardPreview: "एक ही डैशबोर्ड में मानचित्र, अलर्ट, SOS और मार्ग योजना पाएँ।",
+    welcomeBack: "वापसी पर स्वागत है",
+    createAccount: "अपना खाता बनाएँ",
+    joinDescription: "लाइव सुरक्षा अलर्ट और सुरक्षित यात्रा उपकरणों के लिए जुड़ें।",
+    loginDescription: "अपने सुरक्षा डैशबोर्ड तक पहुँचने के लिए साइन इन करें।",
+    email: "ईमेल",
+    password: "पासवर्ड",
+    pleaseWait: "कृपया प्रतीक्षा करें...",
+    signUp: "साइन अप",
+    login: "लॉग इन",
+    alreadyAccount: "पहले से खाता है? साइन इन करें",
+    newHere: "नए हैं? खाता बनाएँ",
+    travelerShield: "यात्री सुरक्षा कवच",
+    saferTravel: "सुरक्षित यात्रा की ओर कदम बढ़ाएँ",
+    stayProtected: "सुरक्षित रहें",
+    alertsContactsDirections: "लाइव अलर्ट, सत्यापित संपर्क और सुरक्षित स्थानों के रास्ते पाएँ।",
+    aiPowered: "AI संचालित · हमेशा सतर्क",
+    liveMonitoring: "लाइव निगरानी",
+    aiAssisted: "AI सहायता",
+    emergency: "आपातकाल",
+    adminDashboard: "एडमिन डैशबोर्ड",
+    profile: "प्रोफ़ाइल",
+    emergencyHelper: "आपातकालीन सहायता",
+    backToDashboard: "डैशबोर्ड पर वापस जाएँ",
+    planning: "योजना",
+    tripPlanner: "यात्रा योजनाकार",
+    close: "बंद करें",
+    home: "होम",
+    chat: "चैट",
+    digitalId: "डिजिटल आईडी",
+    tripPlan: "यात्रा योजना",
+    logout: "लॉग आउट",
+    communityResponse: "सामुदायिक सहायता",
+    sendLocationDescription: "अपना स्थान साझा करें और आसपास ऑनलाइन उपलब्ध लोगों से सहायता माँगें।",
+    emergencyMenu: "आपातकालीन मेनू",
+    postEmergency: "आपातकाल पोस्ट करें",
+    sentByMe: "मेरे द्वारा भेजे गए",
+    receivedNearby: "पास से प्राप्त",
+    postAnEmergency: "आपातकाल पोस्ट करें",
+    postEmergencyDescription: "पास के सहायकों को बताएँ कि क्या हुआ है और अपना लाइव स्थान साझा करें।",
+  },
+};
+
+const LanguageContext = createContext(null);
+
+export function LanguageProvider({ children }) {
+  const [language, setLanguage] = useState(() => localStorage.getItem("language") || "en");
+
+  useEffect(() => {
+    localStorage.setItem("language", language);
+    document.documentElement.lang = language === "hi" ? "hi" : "en";
+  }, [language]);
+
+  const t = (key) => translations[language]?.[key] || translations.en[key] || key;
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) throw new Error("useLanguage must be used inside LanguageProvider");
+  return context;
+}

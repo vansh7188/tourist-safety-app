@@ -19,6 +19,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminPanicDetails from "./pages/AdminPanicDetails";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import { LanguageProvider } from "./context/LanguageContext";
 
 function App() {
   const { isLoaded } = useJsApiLoader({
@@ -27,9 +28,10 @@ function App() {
   });
 
   return (
-    <TravelProvider>
-      <Router>
-        <Routes>
+    <LanguageProvider>
+      <TravelProvider>
+        <Router>
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="dashboard" element={<Dashboard isLoaded={isLoaded} />} />
@@ -66,9 +68,10 @@ function App() {
               </ProtectedAdminRoute>
             } 
           />
-        </Routes>
-      </Router>
-    </TravelProvider>
+          </Routes>
+        </Router>
+      </TravelProvider>
+    </LanguageProvider>
   );
 }
 

@@ -2,36 +2,38 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaShieldAlt, FaMapMarkedAlt, FaBell, FaRoute } from "react-icons/fa";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { useLanguage } from "../context/LanguageContext";
 
 function Home() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const featureCards = [
     {
-      title: "Live Safety Alerts",
-      description: "Receive local risk signals and stay informed while moving.",
+      title: t("liveSafetyAlerts"),
+      description: t("liveSafetyAlertsDescription"),
       icon: <FaBell className="text-emerald-500" />,
       accent: "border-emerald-200",
     },
     {
-      title: "Smart Route Guidance",
-      description: "Get safer route suggestions designed for public transport.",
+      title: t("smartRouteGuidance"),
+      description: t("smartRouteGuidanceDescription"),
       icon: <FaRoute className="text-sky-500" />,
       accent: "border-sky-200",
     },
     {
-      title: "Trusted Contacts",
-      description: "Keep emergency contacts and profile details ready anytime.",
+      title: t("trustedContacts"),
+      description: t("trustedContactsDescription"),
       icon: <FaShieldAlt className="text-amber-500" />,
       accent: "border-amber-200",
     },
   ];
 
-  const fullText =
-    "Your travel companion that ensures safety, guides you through secure paths.";
+  const fullText = t("travelCompanion");
   return (
     <div className="min-h-screen w-full app-shell flex flex-col">
       <div className="w-full border-b border-slate-200/80 bg-white/80 px-4 py-4 backdrop-blur-md sm:px-8">
-        <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
             <FaShieldAlt />
@@ -43,14 +45,17 @@ function Home() {
               <h1 className="text-lg font-bold text-slate-900">Globe Guard</h1>
             </div>
           </div>
+          <div className="flex items-center gap-3">
+          <LanguageSwitcher />
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/login")}
             className="rounded-xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
           >
-            Get Started
+            {t("getStarted")}
           </motion.button>
+          </div>
         </div>
       </div>
 
@@ -58,7 +63,7 @@ function Home() {
         <div className="flex flex-col justify-center rounded-2xl border border-slate-200/80 bg-white/80 p-6 shadow-md backdrop-blur-md md:p-10">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Real-time safety companion
+            {t("realTimeSafety")}
           </div>
           <motion.h1
             className="mt-5 text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight"
@@ -66,7 +71,7 @@ function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            Smart Tourist Safety
+            {t("smartTouristSafety")}
           </motion.h1>
           <p className="mt-4 text-lg text-slate-600 max-w-xl">
             {fullText}
@@ -77,13 +82,13 @@ function Home() {
               onClick={() => navigate("/login")}
               className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
             >
-              Start Your Journey
+              {t("startJourney")}
             </button>
             <button
               onClick={() => navigate("/login")}
               className="rounded-xl border border-slate-200/80 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
-              Explore Features
+              {t("exploreFeatures")}
             </button>
           </div>
 
@@ -119,10 +124,10 @@ function Home() {
             <div className="absolute left-4 bottom-4 right-4 rounded-2xl bg-slate-900/60 backdrop-blur px-4 py-3 text-white">
               <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-sky-200">
                 <FaMapMarkedAlt />
-                Safety View
+                {t("safetyView")}
               </div>
               <p className="mt-1 text-sm font-semibold">
-                Map, alerts, SOS access, and route planning in one dashboard.
+                {t("dashboardPreview")}
               </p>
             </div>
           </div>
