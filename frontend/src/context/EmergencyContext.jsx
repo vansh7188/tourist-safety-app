@@ -19,11 +19,15 @@ export function EmergencyProvider({ children }) {
       .then(({ posts = [] }) => {
         setAlerts(posts.map((post) => ({
           postId: post._id,
+          userId: post.userId?._id || post.userId,
           requesterName: post.userId?.name || "A traveler",
           textSnippet: post.text,
           mediaThumbnail: post.mediaUrls?.[0] || null,
           distanceMeters: null,
           acceptedByMe: Boolean(post.acceptedByMe),
+          isRepeatRequester: Boolean(post.isRepeatRequester),
+          requesterRequestCount: post.requesterRequestCount || 1,
+          hasPreviousAccepted: Boolean(post.hasPreviousAccepted),
           location: post.location || null,
         })));
       })
@@ -39,10 +43,24 @@ export function EmergencyProvider({ children }) {
       connection.emit("presence:register");
     });
     connection.on("emergency:new", (alert) => {
-      setAlerts((current) => [
-        alert,
-        ...current.filter((item) => item.postId !== alert.postId),
-      ]);
+      setAlerts((current) => {
+        // Check if there are already other alerts from this same userId
+        const countFromSameUser = current.filter(
+          (item) => item.userId && alert.userId && String(item.userId) === String(alert.userId)
+        ).length;
+
+        const enrichedAlert = {
+          ...alert,
+          isRepeatRequester: alert.isRepeatRequester || countFromSameUser > 0,
+          requesterRequestCount: Math.max(alert.requesterRequestCount || 1, countFromSameUser + 1),
+          hasPreviousAccepted: alert.hasPreviousAccepted || false,
+        };
+
+        return [
+          enrichedAlert,
+          ...current.filter((item) => item.postId !== alert.postId),
+        ];
+      });
     });
     connection.on("emergency:resolved", ({ postId }) => {
       setAlerts((current) => current.filter((item) => item.postId !== postId));

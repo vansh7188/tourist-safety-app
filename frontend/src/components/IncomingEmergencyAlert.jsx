@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaMapMarkerAlt } from "react-icons/fa";
+import { FaMapMarkerAlt, FaHistory, FaUserCheck } from "react-icons/fa";
 import { useEmergency } from "../context/useEmergency";
 
 function IncomingEmergencyAlert({ inline = false, onAccepted, onOpenChat, currentLocation }) {
@@ -54,7 +54,11 @@ function IncomingEmergencyAlert({ inline = false, onAccepted, onOpenChat, curren
       ? "flex flex-col gap-4"
       : "fixed right-4 top-4 z-60 flex w-[min(92vw,390px)] flex-col gap-3"}
     >
-      {alerts.map((alert) => (
+      {alerts.map((alert) => {
+        const isRepeat = alert.isRepeatRequester || alert.requesterRequestCount > 1;
+        const hasPrevChat = alert.hasPreviousAccepted;
+
+        return (
         <article key={alert.postId} className="rounded-2xl border border-amber-200 bg-white p-4 shadow-xl">
           {/** Keep accepted state compact in a single action row to avoid card height jump. */}
           {(() => {
@@ -62,11 +66,28 @@ function IncomingEmergencyAlert({ inline = false, onAccepted, onOpenChat, curren
             return (
               <>
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Nearby emergency</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Nearby emergency</p>
+                {hasPrevChat && (
+                  <div className="flex items-center gap-1 rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5">
+                    <FaUserCheck className="text-[10px] text-purple-600" />
+                    <span className="text-[10px] font-bold text-purple-700">Previous Contact</span>
+                  </div>
+                )}
+                {isRepeat && !hasPrevChat && (
+                  <div className="flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-200 px-2 py-0.5">
+                    <FaHistory className="text-[10px] text-indigo-600" />
+                    <span className="text-[10px] font-bold text-indigo-700">Repeat ({alert.requesterRequestCount})</span>
+                  </div>
+                )}
+              </div>
               <h2 className="mt-1 font-bold text-slate-900">{alert.requesterName || "A traveler"} needs help</h2>
+              {hasPrevChat && (
+                <p className="mt-1 text-xs text-purple-700 font-medium">💬 Chat history preserved with this traveler</p>
+              )}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => openDirections(alert)}
@@ -110,7 +131,8 @@ function IncomingEmergencyAlert({ inline = false, onAccepted, onOpenChat, curren
             );
           })()}
         </article>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -12,6 +12,9 @@ import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import { GoogleGenAI } from "@google/genai";
 
+// Configure DNS to use reliable public DNS servers for MongoDB Atlas SRV resolution
+dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1']);
+
 // Prefer IPv4 when a network does not provide working IPv6 egress.
 dns.setDefaultResultOrder("ipv4first");
 
@@ -833,6 +836,7 @@ const emergencyRouter = createEmergencyRouter({
   EmergencyPost,
   Profile,
   Message,
+  DigitalId,
   emitToUser: socketServer.emitToUser,
   joinUserToRoom: socketServer.joinUserToRoom,
 });

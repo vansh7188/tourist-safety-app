@@ -45,7 +45,13 @@ function EmergencyChat() {
     socket.emit("emergency:join", { postId });
     const handleMessage = (message) => {
       if (String(message.postId) === String(postId)) {
-        setMessages((current) => [...current, message]);
+        setMessages((current) => {
+          // Prevent duplicate messages
+          if (current.some(m => m._id && message._id && String(m._id) === String(message._id))) {
+            return current;
+          }
+          return [...current, message];
+        });
       }
     };
     socket.on("chat:message", handleMessage);

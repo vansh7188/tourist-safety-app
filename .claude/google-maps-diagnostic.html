@@ -1,0 +1,456 @@
+<title>Google Maps API Diagnostic</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #fff;
+    --text: #1a1a1a;
+    --muted: #666;
+    --border: #e0e0e0;
+    --success: #22c55e;
+    --error: #ef4444;
+    --warning: #f59e0b;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1a1a1a;
+      --surface: #2a2a2a;
+      --text: #fafafa;
+      --muted: #999;
+      --border: #404040;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #1a1a1a;
+    --surface: #2a2a2a;
+    --text: #fafafa;
+    --muted: #999;
+    --border: #404040;
+  }
+
+  body {
+    margin: 0;
+    padding: 20px;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 24px 0;
+  }
+
+  .key-input {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  label {
+    font-weight: 500;
+    font-size: 13px;
+  }
+
+  input {
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font: inherit;
+  }
+
+  button {
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  button:hover {
+    opacity: 0.9;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .results {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .test-card {
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .test-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .test-name {
+    font-weight: 500;
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .status.pending {
+    background: #f0f0f0;
+    color: var(--muted);
+  }
+
+  .status.testing {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .status.success {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  .status.error {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .status.warning {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .test-details {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .error-text {
+    margin-top: 8px;
+    padding: 12px;
+    background: var(--bg);
+    border-left: 3px solid var(--error);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    word-break: break-all;
+  }
+
+  .fix-section {
+    margin-top: 24px;
+    padding: 16px;
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+  }
+
+  .fix-section h2 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #92400e;
+  }
+
+  .fix-section ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #78350f;
+  }
+
+  .fix-section li {
+    margin-bottom: 8px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .status.pending {
+      background: #333;
+    }
+
+    :root:not([data-theme="light"]) .status.testing {
+      background: #1e3a8a;
+      color: #93c5fd;
+    }
+
+    :root:not([data-theme="light"]) .status.success {
+      background: #14532d;
+      color: #86efac;
+    }
+
+    :root:not([data-theme="light"]) .status.error {
+      background: #7f1d1d;
+      color: #fca5a5;
+    }
+
+    :root:not([data-theme="light"]) .fix-section {
+      background: #422006;
+      border-color: #92400e;
+    }
+
+    :root:not([data-theme="light"]) .fix-section h2 {
+      color: #fbbf24;
+    }
+
+    :root:not([data-theme="light"]) .fix-section ul {
+      color: #fde68a;
+    }
+  }
+</style>
+
+<div class="container">
+  <h1>🗺️ Google Maps API Diagnostic</h1>
+
+  <div class="key-input">
+    <label for="frontend-key">Frontend API Key (VITE_GOOGLE_MAPS_API_KEY)</label>
+    <input type="text" id="frontend-key" placeholder="AIzaSy...">
+
+    <label for="backend-key" style="margin-top: 12px">Backend API Key (GOOGLE_MAPS_API_KEY)</label>
+    <input type="text" id="backend-key" placeholder="AIzaSy...">
+
+    <button onclick="runTests()" style="margin-top: 12px">Run Diagnostics</button>
+  </div>
+
+  <div class="results" id="results"></div>
+  <div id="fixes"></div>
+</div>
+
+<script>
+const tests = [
+  {
+    name: 'Maps JavaScript API',
+    api: 'frontend',
+    test: async (key) => {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
+
+      return new Promise((resolve, reject) => {
+        script.onload = () => {
+          if (window.google && window.google.maps) {
+            resolve('✓ Maps JavaScript API loaded successfully');
+          } else {
+            reject('Maps API script loaded but google.maps is undefined');
+          }
+        };
+        script.onerror = () => reject('Failed to load Maps JavaScript API script');
+        document.head.appendChild(script);
+      });
+    }
+  },
+  {
+    name: 'Geocoding API',
+    api: 'frontend',
+    test: async (key) => {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=28.6139,77.209&key=${key}`
+      );
+      const data = await res.json();
+
+      if (data.status === 'OK') {
+        return `✓ Geocoding working: ${data.results[0]?.formatted_address || 'address found'}`;
+      } else if (data.status === 'REQUEST_DENIED') {
+        throw new Error(`REQUEST_DENIED: ${data.error_message || 'API not enabled or key restricted'}`);
+      } else {
+        throw new Error(`Status: ${data.status} - ${data.error_message || 'Unknown error'}`);
+      }
+    }
+  },
+  {
+    name: 'Places API (New)',
+    api: 'backend',
+    test: async (key) => {
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': key,
+          'X-Goog-FieldMask': 'places.id'
+        },
+        body: JSON.stringify({
+          textQuery: 'police station',
+          maxResultCount: 1
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        return '✓ Places API (New) working';
+      } else {
+        throw new Error(`${data.error?.status || res.status}: ${data.error?.message || 'Unknown error'}`);
+      }
+    }
+  },
+  {
+    name: 'Places API Nearby Search',
+    api: 'backend',
+    test: async (key) => {
+      const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': key,
+          'X-Goog-FieldMask': 'places.displayName'
+        },
+        body: JSON.stringify({
+          includedTypes: ['police'],
+          maxResultCount: 1,
+          locationRestriction: {
+            circle: {
+              center: { latitude: 28.6139, longitude: 77.209 },
+              radius: 3000
+            }
+          }
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        return '✓ Places Nearby Search working';
+      } else {
+        throw new Error(`${data.error?.status || res.status}: ${data.error?.message || 'Unknown error'}`);
+      }
+    }
+  }
+];
+
+async function runTests() {
+  const frontendKey = document.getElementById('frontend-key').value.trim();
+  const backendKey = document.getElementById('backend-key').value.trim();
+
+  if (!frontendKey || !backendKey) {
+    alert('Please enter both API keys');
+    return;
+  }
+
+  const resultsDiv = document.getElementById('results');
+  const fixesDiv = document.getElementById('fixes');
+  resultsDiv.innerHTML = '';
+  fixesDiv.innerHTML = '';
+
+  const results = [];
+
+  for (const test of tests) {
+    const card = document.createElement('div');
+    card.className = 'test-card';
+    card.innerHTML = `
+      <div class="test-header">
+        <span class="test-name">${test.name}</span>
+        <span class="status testing">⏳ Testing...</span>
+      </div>
+      <div class="test-details">Using ${test.api} key</div>
+    `;
+    resultsDiv.appendChild(card);
+
+    const key = test.api === 'frontend' ? frontendKey : backendKey;
+
+    try {
+      const result = await test.test(key);
+      const status = card.querySelector('.status');
+      status.className = 'status success';
+      status.textContent = '✓ Success';
+      card.querySelector('.test-details').textContent = result;
+      results.push({ test: test.name, success: true });
+    } catch (error) {
+      const status = card.querySelector('.status');
+      status.className = 'status error';
+      status.textContent = '✗ Failed';
+
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-text';
+      errorDiv.textContent = error.message;
+      card.appendChild(errorDiv);
+
+      results.push({ test: test.name, success: false, error: error.message });
+    }
+  }
+
+  // Show fixes if any tests failed
+  const failures = results.filter(r => !r.success);
+  if (failures.length > 0) {
+    showFixes(failures);
+  }
+}
+
+function showFixes(failures) {
+  const fixesDiv = document.getElementById('fixes');
+
+  const commonIssues = [];
+
+  if (failures.some(f => f.error?.includes('REQUEST_DENIED'))) {
+    commonIssues.push('API not enabled in Google Cloud Console');
+  }
+
+  if (failures.some(f => f.error?.includes('PERMISSION_DENIED'))) {
+    commonIssues.push('API key has application or API restrictions blocking this request');
+  }
+
+  if (failures.some(f => f.error?.includes('INVALID_REQUEST'))) {
+    commonIssues.push('Request format issue (less likely with same code as friend)');
+  }
+
+  if (commonIssues.length === 0) {
+    commonIssues.push('Connection or configuration issue');
+  }
+
+  fixesDiv.innerHTML = `
+    <div class="fix-section">
+      <h2>🔧 Likely Issues Found</h2>
+      <ul>
+        ${commonIssues.map(issue => `<li>${issue}</li>`).join('')}
+      </ul>
+      <p style="margin: 12px 0 0 0; font-size: 13px; color: var(--muted);">
+        <strong>Next steps:</strong> Check Google Cloud Console → APIs & Services → Enabled APIs.
+        Both keys need: Maps JavaScript API, Geocoding API, and Places API (New) enabled.
+        Also verify Application Restrictions and API Restrictions on each key.
+      </p>
+    </div>
+  `;
+}
+
+// Pre-fill keys if provided
+window.addEventListener('load', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const frontend = urlParams.get('frontend');
+  const backend = urlParams.get('backend');
+
+  if (frontend) document.getElementById('frontend-key').value = frontend;
+  if (backend) document.getElementById('backend-key').value = backend;
+
+  if (frontend && backend) {
+    runTests();
+  }
+});
+</script>
