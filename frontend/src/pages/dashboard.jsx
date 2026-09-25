@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaLifeRing, FaUserCircle } from "react-icons/fa";
+import { FaLifeRing, FaUserCircle, FaCompass } from "react-icons/fa";
 import MobileNavBar from "../components/MobileNavBar";
 import { useJsApiLoader } from "@react-google-maps/api";
 import LeftPanel from "../components/left_dashboard";
@@ -88,6 +88,15 @@ function Dashboard() {
             <div className="flex items-center gap-4">
               <LanguageSwitcher dark />
               <SafetyAlertIndicator />
+              <button
+                type="button"
+                onClick={() => navigate("/guides")}
+                title="Tour Guides"
+                className="flex items-center gap-2 rounded-full border border-teal-200/40 bg-teal-600/90 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-teal-700"
+              >
+                <FaCompass />
+                <span>{t("guides") || "Guides"}</span>
+              </button>
               <button
                 type="button"
                 onClick={() => navigate("/emergency")}

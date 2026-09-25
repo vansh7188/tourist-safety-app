@@ -13,6 +13,7 @@ import Chatbot from "./components/Chatbot";
 import EmergencyChat from "./components/EmergencyChat";
 import { EmergencyProvider } from "./context/EmergencyContext";
 import EmergencyPage from "./pages/EmergencyPage";
+import GuidePage from "./pages/GuidePage";
 
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
@@ -40,6 +41,7 @@ function App() {
           <Route path="digitalid/edit" element={<DigitalidForm />} />
           <Route path="chatbot" element={<Chatbot />} />
           <Route path="emergency" element={<EmergencyPage />} />
+          <Route path="guides" element={<GuidePage />} />
           <Route
             path="emergency/:postId"
             element={

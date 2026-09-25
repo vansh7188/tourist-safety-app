@@ -141,5 +141,67 @@ export function createSocketServer({ server, jwtSecret, Profile, EmergencyPost, 
     });
   });
 
+  // ───────────────── Guide Booking Namespace ─────────────────
+  const guideNsp = io.of("/guide-booking");
+
+  guideNsp.use(async (socket, next) => {
+    try {
+      const token = getToken(socket);
+      if (!token) return next(new Error("Authentication required"));
+
+      const decoded = jwt.verify(token, jwtSecret);
+      const profile = await Profile.findOne({ email: decoded.email });
+      if (!profile) return next(new Error("Profile not found"));
+
+      socket.profile = profile;
+      return next();
+    } catch (error) {
+      return next(new Error("Invalid or expired token"));
+    }
+  });
+
+  guideNsp.on("connection", (socket) => {
+    const profileId = socket.profile._id;
+
+    socket.on("guide:joinBooking", ({ bookingId } = {}) => {
+      if (bookingId) socket.join(`booking:${bookingId}`);
+    });
+
+    socket.on("guide:message", async ({ bookingId, text } = {}) => {
+      const messageText = typeof text === "string" ? text.trim() : "";
+      if (!bookingId || !messageText) {
+        return socket.emit("guide:error", { error: "bookingId and text are required" });
+      }
+
+      try {
+        // Lazy-import GuideMessage and GuideBooking to avoid circular deps
+        const { GuideMessage } = await import("./models/GuideMessage.js");
+        const { GuideBooking } = await import("./models/GuideBooking.js");
+
+        const booking = await GuideBooking.findById(bookingId);
+        if (!booking) return socket.emit("guide:error", { error: "Booking not found" });
+
+        const isParticipant =
+          booking.guideUserId.equals(profileId) || booking.touristId.equals(profileId);
+        if (!isParticipant) {
+          return socket.emit("guide:error", { error: "Not a participant" });
+        }
+
+        const message = await GuideMessage.create({
+          bookingId,
+          senderId: profileId,
+          text: messageText,
+        });
+        const populated = await message.populate("senderId", "name email");
+
+        guideNsp.to(`booking:${bookingId}`).emit("guide:message", populated);
+      } catch (error) {
+        socket.emit("guide:error", { error: "Failed to send message" });
+      }
+    });
+
+    socket.on("disconnect", () => {});
+  });
+
   return { io, emitToUser, joinUserToRoom };
 }
