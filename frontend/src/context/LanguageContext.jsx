@@ -59,6 +59,13 @@ const translations = {
     receivedNearby: "Received nearby",
     postAnEmergency: "Post an emergency",
     postEmergencyDescription: "Tell nearby helpers what is happening and share your live location.",
+    guides: "Local Guides",
+    guideBooking: "Guide Booking",
+    findGuide: "Find a Guide",
+    becomeGuide: "Become a Guide",
+    myBookings: "My Bookings",
+    guideDashboard: "Guide Hub",
+    guideDiscoveryDescription: "Discover verified local guides to explore safe, authentic tourist experiences.",
   },
   hi: {
     language: "भाषा",
@@ -118,6 +125,13 @@ const translations = {
     receivedNearby: "पास से प्राप्त",
     postAnEmergency: "आपातकाल पोस्ट करें",
     postEmergencyDescription: "पास के सहायकों को बताएँ कि क्या हुआ है और अपना लाइव स्थान साझा करें।",
+    guides: "स्थानीय गाइड",
+    guideBooking: "गाइड बुकिंग",
+    findGuide: "गाइड ढूँढें",
+    becomeGuide: "गाइड बनें",
+    myBookings: "मेरी बुकिंग",
+    guideDashboard: "गाइड हब",
+    guideDiscoveryDescription: "सुरक्षित और प्रामाणिक यात्रा अनुभवों के लिए सत्यापित स्थानीय गाइड ढूँढें।",
   },
 };
 

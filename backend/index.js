@@ -28,7 +28,12 @@ import Admin from "./models/Admin.js";
 import { EmergencyPost } from "./models/EmergencyPost.js";
 import { Message } from "./models/Message.js";
 import { createEmergencyRouter } from "./emergencyRoutes.js";
+import { createGuideRouter } from "./guideRoutes.js";
 import { createSocketServer } from "./socket.js";
+import { GuideProfile } from "./models/GuideProfile.js";
+import { GuideBooking } from "./models/GuideBooking.js";
+import { GuideReview } from "./models/GuideReview.js";
+import { GuideMessage } from "./models/GuideMessage.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -841,6 +846,18 @@ const emergencyRouter = createEmergencyRouter({
   joinUserToRoom: socketServer.joinUserToRoom,
 });
 app.use("/api/emergency", authMiddleware, emergencyRouter);
+
+// ----------------- Guide Booking Routes (Protected) -----------------
+const guideRouter = createGuideRouter({
+  GuideProfile,
+  GuideBooking,
+  GuideReview,
+  GuideMessage,
+  Profile,
+  DigitalId,
+  emitToUser: socketServer.emitToUser,
+});
+app.use("/api/guides", authMiddleware, guideRouter);
 
 // ----------------- Admin Routes -----------------
 const adminRouter = createAdminRouter();

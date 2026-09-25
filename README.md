@@ -49,6 +49,14 @@ The map doesn't just show where you are:
 - **Sends live location to the server** every 15 seconds for last-known-location tracking
 - **Reverse geocoding** provides full address details (state, district, city, postcode)
 
+### 7. 🧭 Local Tourist Guide Booking & Real-Time Coordination System
+A complete marketplace connecting tourists with verified local guides:
+- **Geospatial Guide Discovery** — search certified local guides by location, radius (`2dsphere`), language, specialties, and hourly pricing
+- **Flexible Packages** — book tours on hourly, half-day (4h), or full-day (8h) plans with custom pickup locations and special requests
+- **Dedicated Socket.IO Channel** — real-time isolated tour coordination chat (`/guide-booking` namespace)
+- **Official Guide Hub** — locals can register as certified guides, configure custom pricing, set availability schedules, and accept/manage bookings
+- **Review & Rating System** — verified ratings and reviews calculate cumulative averages and total completed bookings automatically
+
 ---
 
 ## ✨ Feature Summary
@@ -56,13 +64,13 @@ The map doesn't just show where you are:
 | Feature | Description |
 |---|---|
 | 🆘 Emergency Helper | Post emergencies, get matched with nearby helpers, real-time chat |
+| 🧭 Local Guide Booking | Discover verified local guides, book hourly/day tours, live chat & reviews |
 | 🚨 Panic Button | One-tap + voice-activated, camera capture, SMS/email/in-app alerts |
 | 📴 Offline Queue | Panic requests save locally and auto-sync when back online |
 | 🤖 AI Chatbot | Location-aware safety advice with nearby place directions |
 | 📡 Safety Alerts | Area safety rating with live alert feed and severity classification |
 | 🗺️ Live Map | Real-time tracking, travel path, 15s location updates to server |
 | 🆔 Digital ID | Aadhaar/passport verification, emergency contact management |
-| 🛡️ Admin Panel | Dashboard with stats, filters, search, panic detail view |
 | 📸 Evidence Capture | Auto-captures photos on panic, uploads to Cloudinary |
 | 📱 Mobile-First UI | Responsive design with bottom navigation, Tailwind CSS + Framer Motion |
 
@@ -72,12 +80,6 @@ The map doesn't just show where you are:
 
 ### Backend
 | Technology | Purpose |
-|---|---|
-| **Node.js + Express 5** | REST API server |
-| **MongoDB (Mongoose)** | Database with GeoJSON indexing for proximity queries |
-| **Socket.IO** | Real-time WebSocket for emergency alerts and chat |
-| **Google Gemini API** | AI-powered safety chatbot |
-| **Twilio** | SMS alerts to emergency contacts |
 | **Nodemailer** | Email notifications |
 | **Cloudinary + Multer** | Media uploads (photos/videos) |
 | **JWT + bcrypt** | Authentication and password hashing |
@@ -86,42 +88,32 @@ The map doesn't just show where you are:
 ### Frontend
 | Technology | Purpose |
 |---|---|
-| **React 19 + Vite 7** | SPA framework and dev server |
-| **Tailwind CSS 4** | Utility-first styling |
-| **Framer Motion** | Animations (panic button, transitions) |
-| **Google Maps API** | Interactive maps, geocoding, directions |
 | **Socket.IO Client** | Real-time emergency events and chat |
 | **Web Speech API** | Voice-activated panic command |
 | **Web Share API** | Native sharing of panic reports |
 
 ---
 
-## 📁 Project Structure
-
-```
-tourist-safety-app/
-├── backend/
-│   ├── index.js                   # Express server, Socket.IO setup, routes
-│   ├── adminRoutes.js             # Admin dashboard API (panics, stats, management)
 │   ├── emergencyRoutes.js         # Emergency post, accept, chat, media upload
+│   ├── guideRoutes.js             # Local guide search, register, booking & reviews
 │   ├── DigitalidForm.js           # Digital ID, panic request, KYC routes
 │   └── models/
 │       ├── Profile.js             # User profile with location & emergency contacts
+│       ├── GuideProfile.js        # Guide profile with pricing, ratings & location
+│       ├── GuideBooking.js        # Guide booking lifecycle & status
+│       ├── GuideReview.js         # Guide rating and review aggregation
+│       ├── GuideMessage.js        # Live chat messages for guide bookings
 │       ├── panic.js               # Panic request schema (GeoJSON, KYC, contacts)
 │       ├── panicMedia.js          # Panic evidence photos
 │       ├── EmergencyPost.js       # Emergency helper posts (GeoJSON, responders)
 │       ├── Message.js             # Chat messages for emergency channels
-│       └── Admin.js               # Admin user schema
-│
-├── frontend/src/
-│   ├── App.jsx                    # Route definitions
-│   ├── pages/
 │   │   ├── Home.jsx               # Landing page
 │   │   ├── Login.jsx              # User authentication
 │   │   ├── dashboard.jsx          # Main dashboard (map, chatbot, panic, alerts)
 │   │   ├── Profile.jsx            # User profile page
 │   │   ├── Pfile.jsx              # Profile file view
 │   │   ├── EmergencyPage.jsx      # Emergency helper hub (post, sent, received)
+│   │   ├── GuidePage.jsx          # Local Guide hub (discover, bookings, guide hub)
 │   │   ├── AdminLogin.jsx         # Admin authentication
 │   │   ├── AdminDashboard.jsx     # Admin panic management dashboard
 │   │   └── AdminPanicDetails.jsx  # Detailed panic request view
@@ -132,6 +124,11 @@ tourist-safety-app/
 │   │   ├── EmergencyHelperForm.jsx# Post emergency with media
 │   │   ├── EmergencyChat.jsx      # Real-time emergency chat (standalone)
 │   │   ├── IncomingEmergencyAlert.jsx # Nearby emergency alerts with accept/chat
+│   │   ├── GuideCard.jsx          # Guide discovery card with rating & rates
+│   │   ├── GuideBookingModal.jsx  # Booking date & package selection modal
+│   │   ├── GuideBecomeForm.jsx    # Guide registration & profile editing form
+│   │   ├── GuideReviewModal.jsx   # Tour feedback and star rating modal
+│   │   ├── InlineGuideChat.jsx    # Real-time tour coordination chat
 │   │   ├── SmartSafetyAlerts.jsx  # Area safety rating and alert feed
 │   │   ├── SafetyAlertIndicator.jsx # Alert badge indicator
 │   │   ├── DigitalidForm.jsx      # Digital ID creation/edit form
@@ -141,6 +138,8 @@ tourist-safety-app/
 │   └── context/
 │       ├── TravelContext.jsx      # Travel state provider
 │       ├── EmergencyContext.jsx    # Socket.IO + emergency alert state
+│       ├── GuideBookingContext.jsx# Socket.IO namespace for guide booking events
+│       ├── LanguageContext.jsx    # Multi-language translation state (EN/HI)
 │       ├── SafetyAlertsContext.jsx # Safety alerts provider
 │       └── useEmergency.js        # Emergency context hook
 │
@@ -267,6 +266,59 @@ tourist-safety-app/
 | GET | `/api/admin/stats/dashboard` | Dashboard statistics |
 
 ---
+
+## Future Feature Suggestions
+
+These proposed extensions would expand Globe Guard from a safety companion into a complete travel planning and local-experience platform. Privacy, verification, and traveler safety should remain core requirements for both features.
+
+### 1. AI Trip Planner
+
+Build on the existing manual trip-planning experience and location-aware Gemini chatbot to create personalized, safety-aware itineraries.
+
+**Suggested capabilities:**
+- Generate day-by-day itineraries from a destination, travel dates, budget, interests, and available transport
+- Recommend safer routes using local safety alerts, weather, operating hours, and travel time
+- Allow travelers to edit, regenerate, save, and share plans across devices
+- Re-plan the day when delays, closures, severe weather, or new safety alerts are detected
+- Explain recommendations and clearly label AI-generated information for user verification
+
+**Recommended MVP:**
+1. Collect destination, dates, interests, budget, and mobility preferences
+2. Generate a structured itinerary with time slots, locations, travel time, and safety notes
+3. Display stops on the existing Google Map and save the plan to the user's profile
+4. Support manual editing and regeneration of individual activities
+
+**Implementation considerations:**
+- Add authenticated trip and itinerary models in MongoDB instead of relying only on local storage
+- Reuse the existing Gemini, Google Maps, geocoding, and safety-alert integrations
+- Cache place and route results, validate AI output on the server, and enforce API rate limits
+- Link to official sources where possible and avoid presenting AI safety guidance as a guarantee
+
+### 2. Local Tourist Guide Booking System
+
+Create a trusted marketplace where travelers can discover, verify, and book local guides for tours, cultural experiences, transport assistance, or language support.
+
+**Suggested capabilities:**
+- Guide profiles with identity verification, languages, expertise, service areas, pricing, availability, and reviews
+- Search and filter by destination, date, activity type, language, group size, accessibility, and price
+- Availability calendar with booking requests, confirmations, cancellations, and reminders
+- Secure in-app messaging and location sharing during an active booking
+- Transparent pricing, payment status, receipts, and a clear cancellation/refund policy
+- Reviews, admin moderation, guide verification, dispute handling, and reporting
+- Safety controls such as emergency contact visibility, check-in prompts, and booking audit history
+
+**Recommended MVP:**
+1. Let verified guides create profiles and publish fixed-duration services
+2. Let travelers search, view profiles, submit booking requests, and message guides
+3. Add guide acceptance, booking status tracking, notifications, and post-booking reviews
+4. Keep payments behind a feature flag until refund, fraud, and dispute workflows are tested
+
+**Implementation considerations:**
+- Add separate guide, service, availability, booking, review, and verification models
+- Use role-based access for travelers, guides, moderators, and administrators
+- Store only the location data needed for a booking, with explicit consent and automatic expiration
+- Use a payment provider with webhooks rather than storing card details in the application
+- Integrate guide availability and booking status with the existing emergency and admin systems
 
 ## 🔐 Security
 

@@ -1,12 +1,12 @@
 import React from "react";
-import { FaHome, FaUserCircle, FaComments, FaLifeRing } from "react-icons/fa";
+import { FaHome, FaUserCircle, FaComments, FaLifeRing, FaMapMarkedAlt } from "react-icons/fa";
 import { useLanguage } from "../context/LanguageContext";
 
 function MobileNavBar({ active, onChat, onNavigate }) {
   const { t } = useLanguage();
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-5 pb-4">
-      <div className="app-header rounded-2xl px-4 py-3 text-white flex items-center justify-around shadow-xl">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-3 pb-3">
+      <div className="app-header rounded-2xl px-2 py-2 text-white flex items-center justify-around shadow-xl">
         <button
           type="button"
           onClick={() => onNavigate("/dashboard")}
@@ -14,7 +14,7 @@ function MobileNavBar({ active, onChat, onNavigate }) {
             active === "dashboard" ? "text-white" : "text-white/70"
           }`}
         >
-          <FaHome className="text-lg" />
+          <FaHome className="text-base" />
           {t("home")}
         </button>
 
@@ -25,8 +25,19 @@ function MobileNavBar({ active, onChat, onNavigate }) {
             active === "emergency" ? "text-white" : "text-white/70"
           }`}
         >
-          <FaLifeRing className="text-lg" />
+          <FaLifeRing className="text-base" />
           {t("emergency")}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onNavigate("/guides")}
+          className={`flex flex-col items-center gap-1 text-[10px] font-semibold ${
+            active === "guides" ? "text-white" : "text-white/70"
+          }`}
+        >
+          <FaMapMarkedAlt className="text-base" />
+          {t("guides")}
         </button>
 
         <button
@@ -34,8 +45,8 @@ function MobileNavBar({ active, onChat, onNavigate }) {
           onClick={onChat}
           className="flex flex-col items-center gap-1 text-[10px] font-semibold text-white"
         >
-          <div className="h-10 w-10 rounded-full btn-accent flex items-center justify-center shadow-lg">
-            <FaComments className="text-base" />
+          <div className="h-8 w-8 rounded-full btn-accent flex items-center justify-center shadow-lg">
+            <FaComments className="text-xs" />
           </div>
           {t("chat")}
         </button>
@@ -47,7 +58,7 @@ function MobileNavBar({ active, onChat, onNavigate }) {
             active === "profile" ? "text-white" : "text-white/70"
           }`}
         >
-          <FaUserCircle className="text-lg" />
+          <FaUserCircle className="text-base" />
           {t("profile")}
         </button>
       </div>
