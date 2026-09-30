@@ -75,7 +75,7 @@ function Dashboard() {
                 Safe Travel
               </div>
               <div className="text-xl font-bold text-white">
-                Globe Guard
+                TravelGuard
               </div>
               <div className="mt-1 flex items-center gap-2 text-xs text-teal-100/80">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -137,7 +137,7 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs font-semibold uppercase tracking-widest text-teal-200">Safe Travel</div>
-              <div className="text-xl font-bold text-white">Globe Guard</div>
+              <div className="text-xl font-bold text-white">TravelGuard</div>
             </div>
               <div className="flex items-center gap-3"><LanguageSwitcher dark /><SafetyAlertIndicator /></div>
           </div>

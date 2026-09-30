@@ -42,7 +42,7 @@ function Home() {
               <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
                 Safe Travel
               </p>
-              <h1 className="text-lg font-bold text-slate-900">Globe Guard</h1>
+              <h1 className="text-lg font-bold text-slate-900">TravelGuard</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">

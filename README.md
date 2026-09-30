@@ -1,4 +1,4 @@
-# 🌍 Globe Guard — Tourist Safety App
+# 🌍 TravelGuard — Tourist Safety App
 
 A comprehensive travel safety platform that keeps tourists safe while exploring unfamiliar destinations. Combines real-time AI assistance, peer-to-peer emergency help, voice-activated panic alerts, and a full admin command center — all in one mobile-first web app.
 
@@ -9,7 +9,7 @@ A comprehensive travel safety platform that keeps tourists safe while exploring 
 ## 🔥 What Makes This Project Unique
 
 ### 1. 🆘 Peer-to-Peer Emergency Helper Network (SOS Network)
-Unlike traditional safety apps that only call authorities, Globe Guard creates a **real-time community rescue network**. When a traveler posts an emergency:
+Unlike traditional safety apps that only call authorities, TravelGuard creates a **real-time community rescue network**. When a traveler posts an emergency:
 - Nearby online users receive **instant location-based alerts** via WebSocket
 - Helpers can **accept the request**, view **live distance**, and open **Google Maps directions** to the person in need
 - A **real-time chat channel** opens between the requester and all accepted helpers using Socket.IO
@@ -269,7 +269,7 @@ A complete marketplace connecting tourists with verified local guides:
 
 ## Future Feature Suggestions
 
-These proposed extensions would expand Globe Guard from a safety companion into a complete travel planning and local-experience platform. Privacy, verification, and traveler safety should remain core requirements for both features.
+These proposed extensions would expand TravelGuard from a safety companion into a complete travel planning and local-experience platform. Privacy, verification, and traveler safety should remain core requirements for both features.
 
 ### 1. AI Trip Planner
 

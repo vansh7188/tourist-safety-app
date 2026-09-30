@@ -227,7 +227,7 @@ function GuideContent({ navigate }) {
         <div className="flex w-full items-center justify-between px-4 py-3 md:px-6">
           <button type="button" onClick={() => navigate("/dashboard")} className="text-left">
             <div className="text-xs font-semibold uppercase tracking-widest text-teal-200">{t("safeTravel")}</div>
-            <div className="text-xl font-bold text-white">Globe Guard</div>
+            <div className="text-xl font-bold text-white">TravelGuard</div>
             <div className="mt-1 text-xs text-teal-100/80">Local Guide Booking</div>
           </button>
           <div className="flex items-center gap-4">
