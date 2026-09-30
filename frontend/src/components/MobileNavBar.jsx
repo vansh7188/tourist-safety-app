@@ -1,5 +1,5 @@
 import React from "react";
-import { FaHome, FaUserCircle, FaComments, FaLifeRing, FaMapMarkedAlt } from "react-icons/fa";
+import { FaHome, FaUserCircle, FaComments, FaLifeRing, FaMapMarkedAlt, FaPlane } from "react-icons/fa";
 import { useLanguage } from "../context/LanguageContext";
 
 function MobileNavBar({ active, onChat, onNavigate }) {
@@ -16,6 +16,17 @@ function MobileNavBar({ active, onChat, onNavigate }) {
         >
           <FaHome className="text-base" />
           {t("home")}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onNavigate("/plan-my-trip")}
+          className={`flex flex-col items-center gap-1 text-[10px] font-semibold ${
+            active === "plan-trip" ? "text-white" : "text-white/70"
+          }`}
+        >
+          <FaPlane className="text-base" />
+          {t("planMyTrip") || "Plan Trip"}
         </button>
 
         <button
