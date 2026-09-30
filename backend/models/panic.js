@@ -26,6 +26,7 @@ const PanicSchema = new mongoose.Schema({
   panic_request_id: { type: String, index: true },
   email: { type: String, required: true },
   name: { type: String, required: true },
+  digitalIdNumber: { type: String, match: /^\d{10}$/ },
   contact_number: { type: String, required: true },
   kyc: {
     aadhaar: {

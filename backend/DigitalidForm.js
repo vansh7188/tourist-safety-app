@@ -51,7 +51,7 @@ const digitalIdSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    match: /^\d{6}$/,
+    match: /^\d{10}$/,
   },
   email: {
   type: String,
@@ -141,6 +141,15 @@ const syncProfileLocation = async (data) => {
   );
 };
 
+const generateDigitalIdNumber = async (DigitalId) => {
+  let digitalIdNumber;
+  do {
+    digitalIdNumber = String(Math.floor(1000000000 + Math.random() * 9000000000));
+  } while (await DigitalId.exists({ digitalIdNumber }));
+
+  return digitalIdNumber;
+};
+
 // This function creates and returns the router.
 // It takes the 'DigitalId' model as a dependency.
 export function createDigitalIdRouter(DigitalId) {
@@ -200,10 +209,7 @@ export function createDigitalIdRouter(DigitalId) {
 
   router.post("/digital-id", async (req, res) => {
     try {
-      let digitalIdNumber;
-      do {
-        digitalIdNumber = String(Math.floor(100000 + Math.random() * 900000));
-      } while (await DigitalId.exists({ digitalIdNumber }));
+      const digitalIdNumber = await generateDigitalIdNumber(DigitalId);
 
       const newId = new DigitalId({
         ...req.body,
@@ -240,7 +246,9 @@ export function createDigitalIdRouter(DigitalId) {
       }
 
       const existing = await DigitalId.findOne({ email });
-      const digitalIdNumber = existing?.digitalIdNumber || String(Math.floor(100000 + Math.random() * 900000));
+      const digitalIdNumber = /^\d{10}$/.test(existing?.digitalIdNumber || "")
+        ? existing.digitalIdNumber
+        : await generateDigitalIdNumber(DigitalId);
       const updated = await DigitalId.findOneAndUpdate(
         { email },
         { ...req.body, email, digitalIdNumber },
@@ -378,6 +386,7 @@ router.post("/panic", async (req, res) => {
         const digitalId = await DigitalId.findOne({ email: userEmail });
         if (digitalId) {
           panicData.name = req.body.name || digitalId.name;
+          panicData.digitalIdNumber = digitalId.digitalIdNumber;
           panicData.contact_number = req.body.contact_number || digitalId.contactInfo;
           
           if (!req.body.emergency_contacts || req.body.emergency_contacts.length === 0) {

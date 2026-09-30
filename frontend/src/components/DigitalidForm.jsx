@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 function DigitalidForm() {
@@ -11,6 +11,7 @@ function DigitalidForm() {
   const [formData, setFormData] = useState({
     email: "",
     name: "",
+    profileImage: null,
     contactInfo: "",
     kyc: "aadhaar",
     aadhaarNumber: "",
@@ -25,12 +26,32 @@ function DigitalidForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [initializing, setInitializing] = useState(false);
+  const imagePickerRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const cameraStreamRef = useRef(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   // Auto-fill email from localStorage on mount
   useEffect(() => {
     const emailFromStorage = localStorage.getItem("email") || "";
     setFormData((prev) => ({ ...prev, email: emailFromStorage }));
   }, []);
+
+  useEffect(() => {
+    return () => {
+      cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!cameraOpen || !videoRef.current || !cameraStreamRef.current) return;
+
+    videoRef.current.srcObject = cameraStreamRef.current;
+    videoRef.current.play().catch(() => {
+      setErrors({ profileImage: "Camera preview could not start. Please try again." });
+    });
+  }, [cameraOpen]);
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -106,6 +127,80 @@ function DigitalidForm() {
     setErrors({});
   };
 
+  const handleImageSelected = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setErrors({ profileImage: "Please select an image file." });
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setErrors({ profileImage: "Image must be smaller than 8 MB." });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData((prev) => ({ ...prev, profileImage: reader.result }));
+      setErrors({});
+    };
+    reader.onerror = () => setErrors({ profileImage: "Could not read this image." });
+    reader.readAsDataURL(file);
+  };
+
+  const stopCamera = () => {
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+    setCameraOpen(false);
+  };
+
+  const openCamera = async () => {
+    setErrors({});
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setErrors({
+        profileImage:
+          "Live camera is unavailable here. Please use Choose from device instead.",
+      });
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    try {
+      cameraStreamRef.current = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false,
+      });
+      setCameraOpen(true);
+    } catch (error) {
+      console.error("Unable to access camera:", error);
+      setErrors({
+        profileImage:
+          "Camera access was blocked. Allow camera permission in your browser, or choose a photo from your device.",
+      });
+    }
+  };
+
+  const captureCameraPhoto = () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      setErrors({ profileImage: "Camera is still starting. Please try again." });
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    setFormData((prev) => ({
+      ...prev,
+      profileImage: canvas.toDataURL("image/jpeg", 0.85),
+    }));
+    stopCamera();
+    setErrors({});
+  };
+
   const handleEmergencyChange = (index, field, value) => {
     const updatedContacts = [...formData.emergencyContacts];
     updatedContacts[index][field] = value;
@@ -130,6 +225,10 @@ function DigitalidForm() {
       newErrors.name = "Full name is required.";
     } else if (!/^[A-Za-z\s]+$/.test(formData.name)) {
       newErrors.name = "Name must only contain letters.";
+    }
+
+    if (!isEditMode && !formData.profileImage) {
+      newErrors.profileImage = "A profile photo is required for your Digital ID.";
     }
 
     if (!formData.contactInfo.trim()) {
@@ -247,6 +346,7 @@ function DigitalidForm() {
         setFormData({
           email: localStorage.getItem("email") || "",
           name: "",
+          profileImage: null,
           contactInfo: "",
           kyc: "aadhaar",
           aadhaarNumber: "",
@@ -324,6 +424,101 @@ function DigitalidForm() {
             <p className="text-red-500 text-sm mt-1">{errors.name}</p>
           )}
         </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Digital ID Photo
+          </label>
+          <div className="mt-2 flex flex-wrap items-center gap-4">
+            <div className="h-28 w-28 overflow-hidden rounded-xl border border-gray-300 bg-gray-100">
+              {formData.profileImage ? (
+                <img
+                  src={formData.profileImage}
+                  alt="Digital ID preview"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center px-2 text-center text-xs text-gray-500">
+                  Photo preview
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => imagePickerRef.current?.click()}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Choose from device
+              </button>
+              <button
+                type="button"
+                onClick={openCamera}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              >
+                Take a photo
+              </button>
+              {formData.profileImage && (
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, profileImage: null }))}
+                  className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+          <input
+            ref={imagePickerRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelected}
+            className="hidden"
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            onChange={handleImageSelected}
+            className="hidden"
+          />
+          {errors.profileImage && (
+            <p className="mt-1 text-sm text-red-500">{errors.profileImage}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            Choose an existing photo or use your device camera. Maximum size: 8 MB.
+          </p>
+        </div>
+
+        {cameraOpen && (
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="mx-auto max-h-80 w-full rounded-lg bg-black object-contain"
+            />
+            <div className="mt-3 flex justify-center gap-2">
+              <button
+                type="button"
+                onClick={captureCameraPhoto}
+                className="rounded-lg bg-emerald-700 px-5 py-2 font-semibold text-white hover:bg-emerald-800"
+              >
+                Capture photo
+              </button>
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="rounded-lg bg-gray-200 px-5 py-2 font-semibold text-gray-700 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Contact Info */}
         <div className="mb-4">

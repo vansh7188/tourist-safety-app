@@ -169,12 +169,13 @@ export function createAdminRouter() {
 
       const filter = {};
 
-      // Search filter (search in name, email, contact_number, panic_query)
+      // Search filter (search in name, email, contact_number, digital ID, panic_query)
       if (search) {
         filter.$or = [
           { name: { $regex: search, $options: "i" } },
           { email: { $regex: search, $options: "i" } },
           { contact_number: { $regex: search, $options: "i" } },
+          { digitalIdNumber: { $regex: search, $options: "i" } },
           { panic_query: { $regex: search, $options: "i" } },
         ];
       }

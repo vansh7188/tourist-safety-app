@@ -41,7 +41,7 @@ function DigitalId() {
       }
     }
     fetchDigitalId();
-  }, []);
+  }, [API_BASE_URL]);
 
   const onDiscardClick = () => setShowConfirm(true);
   const cancelDiscard = () => setShowConfirm(false);
@@ -85,9 +85,27 @@ function DigitalId() {
       {digitalId ? (
         <div>
           <div className="section-card p-6">
-            <h3 className="text-xl font-semibold text-emerald-700 mb-4">Your Digital ID</h3>
+            <div className="mb-5 flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              {digitalId.profileImage ? (
+                <img
+                  src={digitalId.profileImage}
+                  alt={`${digitalId.name} Digital ID`}
+                  className="h-32 w-24 shrink-0 rounded-xl border border-slate-200 object-cover object-center"
+                />
+              ) : (
+                <div className="flex h-32 w-24 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-300 text-center text-xs text-slate-500">
+                  No photo
+                </div>
+              )}
+              <div className="min-w-0">
+                <h3 className="text-xl font-semibold text-emerald-700">Your Digital ID</h3>
+                <p className="mt-2 truncate text-2xl font-bold text-slate-900">{digitalId.name}</p>
+                <p className="mt-2 inline-block rounded-lg bg-emerald-100 px-3 py-2 text-sm font-bold tracking-widest text-emerald-800">
+                  ID: {digitalId.digitalIdNumber}
+                </p>
+              </div>
+            </div>
             <div className="grid gap-2 text-sm text-slate-700">
-              <p><strong>Name:</strong> {digitalId.name}</p>
               <p><strong>Contact:</strong> {digitalId.contactInfo}</p>
               <p><strong>KYC Type:</strong> {digitalId.kyc}</p>
               {digitalId.kyc === "aadhaar" && (
